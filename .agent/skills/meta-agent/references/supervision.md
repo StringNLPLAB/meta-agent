@@ -4,28 +4,34 @@ This is an implementation reference for the outer Codex agent, not a manual setu
 
 The outer agent owns the full authorized workflow: complete one-time reference setup if needed; reuse its summary and applicable experience; inspect current code; establish the contract and run bindings; complete per-run read-only discovery; launch the existing training recipe; arrange an actual continuing supervisor with trajectory export; verify training health, owner and next wake-up; then finish or hand off under the declared budget. For an already-running job, bind to it and assess the current state without relaunching it. Loading the skill is not itself a request for an unbounded experiment.
 
-Use `scripts/supervise.py` for discovery and subsequent time/step-triggered reviews. Unlike `run_watch.py` and `checkpoint_watchdog.sh`, it actually calls the reasoning agent to read training logs and raw trajectories, reassess hypotheses, and propose changes. The runner remains a foreground review/gate process with persisted state; it does not launch training or install an OS service. The outer agent launches training and places the runner under a supported host job owner, or arranges repeated `--once` calls through a supported scheduler. Record the actual job/service/task identity and next wake-up, and verify ownership survives the intended session lifetime before claiming unattended supervision. If the host cannot provide that lifetime, report the concrete limitation and handoff needed; do not present a manual terminal session as completed automation.
+This workflow covers pretraining, self-supervised learning, supervised learning and SFT, reinforcement learning, and agent training. Discover the components the project actually exposes: objectives and losses, data sampling and preprocessing, optimizer schedules, batching, resource use and throughput, and training measurements. Reward, rollout, environment, and user-simulator controls are additional project-specific candidates, not required inputs. Inspect and verify the actual framework's launch interface, progress reporting, diagnostic sources, control readers, and consistency boundaries; general scope does not establish a tested integration for an uninspected framework.
+
+Use `scripts/supervise.py` for discovery and subsequent time/step-triggered reviews. Unlike `run_watch.py` and `checkpoint_watchdog.sh`, it actually calls the reasoning agent to read training logs and available diagnostic samples, reassess hypotheses, and propose changes. The runner remains a foreground review/gate process with persisted state; it does not launch training or install an OS service. The outer agent launches training and places the runner under a supported host job owner, or arranges repeated `--once` calls through a supported scheduler. Record the actual job/service/task identity and next wake-up, and verify ownership survives the intended session lifetime before claiming unattended supervision. If the host cannot provide that lifetime, report the concrete limitation and handoff needed; do not present a manual terminal session as completed automation.
 
 ## One-time reference setup
 
 During setup, the outer Codex agent reads the bundled `references/eau_manuscript_ref.pdf`, **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**, and saves a reusable summary in the existing experience record or intervention map. Record the paper version/source identity, key mechanisms, applicability conditions, and limitations. Reuse those records rather than creating another registry, and pass the saved summary's location to subsequent run discovery.
 
+EAU is a method reference, not a universal training recipe or a requirement to introduce RL components. Retain only mechanisms that fit the inspected project and use its own objectives, feedback boundaries, and supported controls. The EAU / verl adapter documents one optional project setting.
+
 Later experiments, periodic reviews and modifications reuse this cached mechanism summary, applicable experience, and the current run's code and evidence. They do not need to read the paper again. Repeat setup only if the paper version changes or the summary is missing; a new run or training phase alone is not a reason to reread it. This does not replace per-run component discovery: candidates still need to be mapped to the current recipe, resources, code paths, and runtime controls. Codex handles setup automatically within the authorized workflow.
 
 ## Establish inputs and run discovery first
 
-Resolve an exact training root, unique run identity, planned/current log path, training trajectory directory, and experiment contract from the user's request and the inspected recipe. Save the contract as JSON for the runner; the user need not create it. The log and trajectory directory may be absent before training. With an EAU `train_<name>_<YYYYMMDD>_<HHMMSS>.log` filename, the supplied run must match its inferred identity or a registered `reports/run_aliases.json` mapping. Other log filenames use the explicitly bound run/path pair. The runner never picks another run by mtime.
+Resolve an exact training root, unique run identity, planned/current log path, diagnostic-sample directory, and experiment contract from the user's request and the inspected recipe. Save the contract as JSON for the runner; the user need not create it. The log and sample directory may be absent before training. The compatibility argument `--trajectories` names this sample directory: for non-interactive training it can contain sampled examples, predictions, or per-batch diagnostics; for interactive training it can contain trajectories. If samples are unavailable, report that evidence gap and, within the authorized scope, arrange useful sampling or instrumentation. Do not manufacture rollouts or require a nonexistent interactive agent.
+
+With an EAU `train_<name>_<YYYYMMDD>_<HHMMSS>.log` filename, the supplied run must match its inferred identity or a registered `reports/run_aliases.json` mapping. Other log filenames use the explicitly bound run/path pair. The runner never picks another run by mtime.
 
 Example contract, stored in the **training checkout**, with values chosen for that experiment:
 
 ```json
 {
-  "objective": "Improve full-task completion while preserving useful clarification",
+  "objective": "Improve the declared training objective within the compute budget",
   "budget": "200 optimizer steps and at most 30 agent calls, including discovery and final review",
-  "guardrails": ["Preserve task semantics and legitimate information gathering"],
-  "allowed_feedback": ["This run's training log, training trajectories, code and training-only experience"],
+  "guardrails": ["Preserve data semantics and the declared evaluation protocol"],
+  "allowed_feedback": ["This run's training log, permitted diagnostic samples, code and training-only experience"],
   "excluded_feedback": ["Independent evaluation/test instances, trajectories, scores and summaries"],
-  "evaluation_protocol": "Fixed task distribution, user settings, interaction limits, judge and scoring version; final evaluation is reporting-only",
+  "evaluation_protocol": "Fixed evaluation data, preprocessing, metrics and scoring version; final evaluation is reporting-only",
   "checkpoint_selection": "Final run and final checkpoint; no final-test-based selection",
   "allowed_operations": [],
   "records": {
@@ -48,7 +54,7 @@ RUN=RUN
 SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
   --root "$TRAIN_ROOT" --run "$RUN"
   --log logs/train.log
-  --trajectories checkpoints/EXP/debug_trajectories
+  --trajectories reports/training_samples/RUN
   --contract reports/meta_agent_contract.json
   --every-steps 20 --every-seconds 600
   --max-calls 30 --stop-step 200 --idle-timeout 1800
@@ -63,9 +69,11 @@ After discovery, launch the authorized training recipe through the project's sup
 
 The outer agent also owns the training recipe's resource/stop budget and checkpoint completion; `--stop-step` only ends supervision after a final review. Configure training's own bounded recipe or host job separately within the same automated launch workflow. Do not infer that the runner will stop a trainer.
 
-These numbers are examples, not defaults for another recipe. Use `--every-steps N`, `--every-seconds S`, or both (either being due triggers one serial review). `--first-review S` shifts the first step boundary; boundaries at/before the selected log's resume anchor are excluded. Time intervals start after the last completed review. `--agent-timeout` defaults to 600 seconds and `--executor-timeout` to 120; budget one-time setup and per-run component discovery separately from review cadence, and choose timeouts that fit their scope. `--poll-seconds` defaults to 5, with a maximum of 60. The completed-line step regex defaults to `step:(\d+) - `; adapt `--step-regex` with exactly one capturing group for other trainers.
+These numbers are examples, not defaults for another recipe. Use `--every-steps N`, `--every-seconds S`, or both (either being due triggers one serial review). `--first-review S` shifts the first step boundary; boundaries at/before the selected log's resume anchor are excluded. Time intervals start after the last completed review. `--agent-timeout` defaults to 600 seconds and `--executor-timeout` to 120; budget one-time setup and per-run component discovery separately from review cadence, and choose timeouts that fit their scope. `--poll-seconds` defaults to 5, with a maximum of 60. The completed-line step regex defaults to `step:(\d+) - `, an EAU-style log pattern. For another trainer, the outer agent inspects actual completed log lines and derives `--step-regex` with exactly one capturing group for a nondecreasing integer progress counter, such as global optimizer updates or completed epochs. Bind cadence and stop limits to that counter's units; counters that reset each epoch need a stable global representation. The user need not select these flags. If no suitable counter is exposed, the outer agent reports the gap and arranges authorized progress instrumentation or uses time-based reviews without claiming step coverage.
 
-`--once` performs at most one due discovery/review/reconciliation/final pass and can be called by a host scheduler. It does not call the agent again if neither trigger is due. A continuous runner requires an explicit `--max-calls` budget; it counts all dispatched calls, including failed calls, discovery and reconciliation. Increase this limit explicitly when more supervision budget is authorized. `--stop-step` or a separately produced `--completion-file` triggers a read-only final review. Idle timeout takes precedence over another scheduled review, so timer reviews cannot keep an idle run supervised indefinitely. Idle timeout, exhausted budget, or an explained agent handoff stops **supervision**, never training, and preserves unresolved state.
+Idle timeout measures advancement of the parsed progress counter; appended loss lines or other log bytes do not reset it. Prefer adapting or instrumenting a monotonic global counter before using step-based controls. If a usable counter is unavailable, omit `--every-steps`, `--stop-step`, and `--idle-timeout`; use `--every-seconds` with a separately produced `--completion-file` and an explicit call budget, while the outer agent arranges training health checks and the host's time/resource budget. Do not apply the example's step-idle timeout to a timer-only run without a progress counter.
+
+`--once` performs at most one due discovery/review/reconciliation/final pass and can be called by a host scheduler. It does not call the agent again if neither trigger is due. A continuous runner requires an explicit `--max-calls` budget; it counts all dispatched calls, including failed calls, discovery and reconciliation. Increase this limit explicitly when more supervision budget is authorized. `--stop-step` or a separately produced `--completion-file` triggers a read-only final review. A configured idle timeout takes precedence over another scheduled review, so timer reviews cannot keep a run past that timeout. Idle timeout, exhausted budget, or an explained agent handoff stops **supervision**, never training, and preserves unresolved state.
 
 ## Agent backend and returned review
 
@@ -81,9 +89,11 @@ Codex non-interactive structured responses and sandbox flags follow the [officia
 
 For another compatible agent, pass `--agent-command '["/absolute/path/to/agent", "literal-argument"]'`. It receives the prompt on stdin and returns one JSON object on stdout, or writes that object to `$META_AGENT_RESPONSE`. `$META_AGENT_REQUEST` and `$META_AGENT_PHASE` identify the current request. Commands are literal argument arrays, never evaluated as shell text. A custom backend must enforce its own read-only/tool restrictions; the runner does not sandbox arbitrary binaries.
 
-The per-request `response.schema.json` defines the response: phase, summary, complete revised intervention map (or empty to retain it after discovery), cited source arrays, seven review fields, optional operation payload, pending prediction descriptions, optional evidence-labeled experience update, next condition and continue/handoff decision. `review.change`, `prediction` and `verification` carry the existing adapter's tagged fields; the controller prefixes the structured decision and adds its request ID/time. A pending window, instrument plan, justified no-op or deferred restart is valid. Every review reports log and raw trajectory evidence, or explicit gaps, and keeps hypothesis verdict separate from application status.
+The per-request `response.schema.json` defines the response: phase, summary, complete revised intervention map (or empty to retain it after discovery), cited source arrays, seven review fields, optional operation payload, pending prediction descriptions, optional evidence-labeled experience update, next condition and continue/handoff decision. `review.change`, `prediction` and `verification` carry the existing adapter's tagged fields; the controller prefixes the structured decision and adds its request ID/time. A pending window, instrument plan, justified no-op or deferred restart is valid. Every review reports log and diagnostic-sample evidence, or explicit gaps, and keeps hypothesis verdict separate from application status.
 
-The runner validates record structure using `check_mandate.validate_review`, publishes the existing eight-column table, updates the selected map, and appends warranted experience. A schema-valid response is not proof that every observation is true. Agent events and actual source references remain reviewable. Selected trajectory files are diagnostic samples, not population-rate denominators.
+The schema retains compatibility names rather than requiring RL concepts. `sources.trajectories` can cite examples, predictions, per-batch diagnostics, interaction trajectories, or their explicit availability gaps. `review.tier` can name a relevant component category such as data, objective, optimization, or instrumentation; `review.knob` identifies the actual candidate target. These fields do not require an environment, a reward function, or action trajectories. Missing interaction trajectories alone do not make a non-interactive training task unsupported.
+
+The runner validates record structure using `check_mandate.validate_review`, publishes the existing eight-column table, updates the selected map, and appends warranted experience. A schema-valid response is not proof that every observation is true. Agent events and actual source references remain reviewable. Selected diagnostic samples are not population-rate denominators.
 
 ## Optional execution through a project gate
 
@@ -99,15 +109,15 @@ The agent supplies `action.operation` and `action.arguments_json` (a JSON object
   "run": "RUN",
   "step": 40,
   "observation_step": 35,
-  "operation": "set_repeat_budget",
-  "arguments": {"expected_version": 1, "value": 2},
+  "operation": "set_learning_rate",
+  "arguments": {"expected_version": 1, "value": 0.0001},
   "prediction": "The preregistered mechanism criterion and window",
   "review": {"...": "the complete proposed review"},
   "contract": {"...": "the experiment contract"}
 }
 ```
 
-This is an interface illustration, not a runnable training patch. `observation_step` is the review-start cutoff; `step` is re-read before gate dispatch. The record also captures `decision_step` after analysis. Prefer exposure windows relative to verified uptake. If the configured end boundary arrives during analysis, the runner records the operation as not sent and proceeds toward final review. A project executor maps allowed operations to existing validated controls, enforces ranges, expected old state/version and idempotency by request ID, and verifies the supported consistency boundary. It must be a bounded synchronous control operation, not a launcher for detached training/services. The runner adds no training algorithm, control reader, distributed transaction or checkpoint-restoration implementation. New code/restart mechanisms remain candidates until a compatible authorized gate exists.
+This is an interface illustration, not a supplied learning-rate adapter or a runnable training patch. `observation_step` is the review-start cutoff; `step` is re-read before gate dispatch. The record also captures `decision_step` after analysis. Prefer exposure windows relative to verified uptake. If the configured end boundary arrives during analysis, the runner records the operation as not sent and proceeds toward final review. A project executor maps allowed operations to existing validated controls, enforces ranges, expected old state/version and idempotency by request ID, and verifies the supported consistency boundary. It must be a bounded synchronous control operation, not a launcher for detached training/services. The runner adds no training algorithm, control reader, distributed transaction or checkpoint-restoration implementation. New code/restart mechanisms remain candidates until a compatible authorized gate exists.
 
 The executor returns a JSON receipt on stdout, with these string fields:
 
@@ -115,7 +125,7 @@ The executor returns a JSON receipt on stdout, with these string fields:
 {
   "application": "fully_applied",
   "attempt": "native gate receipt and request identity",
-  "boundary": "the actual effective episode/update boundary",
+  "boundary": "the actual effective update, batch, epoch or episode boundary",
   "scope": "worker0,worker1",
   "confirmed": "worker0,worker1",
   "uptake": "traceable consumed value/version evidence for the declared scope",
@@ -141,7 +151,7 @@ A successful final pass records the handoff under the declared checkpoint/evalua
 
 Add `--export-atif` to the runner to export each discovery, review, reconciliation and final agent call, including failed or interrupted calls. This is an observation option: enabling or disabling it does not require `--adopt-settings`, invoke an additional agent, or change the experiment contract. `--once` still performs at most one due pass and installs no service.
 
-This records the **meta-agent's own** visible messages, source-reading tool calls, tool results and structured decisions. The runner's `--trajectories` argument remains the directory of **training trajectories that the meta-agent reads**. The two have different roles.
+This records the **meta-agent's own** visible messages, source-reading tool calls, tool results and structured decisions. The runner's compatibility argument `--trajectories` remains the directory of **training diagnostic samples or interaction trajectories that the meta-agent reads**. The two have different roles.
 
 Exports use the [Harbor Agent Trajectory Interchange Format (ATIF)](https://docs.harborframework.com/agents/atif), version 1.7, using only Python's standard library. Each request directory gains:
 

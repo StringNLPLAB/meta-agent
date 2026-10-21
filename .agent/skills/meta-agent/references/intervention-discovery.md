@@ -5,10 +5,10 @@ Read this at the initial assessment and when new evidence changes the hypothesis
 ## Generate candidates before choosing controls
 
 1. Establish the primary objective, decision horizon, remaining budget, allowed feedback, and unacceptable regressions from the experiment contract.
-2. Reuse the EAU mechanism/applicability summary saved during setup, or the versioned mechanism map below, then read relevant supported, refuted, and unresolved project hypotheses. The full EAU paper is read during setup only; later experiments and reviews use the cached knowledge. Check whether task, model, phase, reward semantics, and implementation conditions transfer. Do not import independent test feedback through old experience under a training-only protocol.
-3. Read representative raw samples/trajectories together with population metrics, subgroup distributions, and implementation details. Look for counterexamples as well as apparent successes; reward-stratified dumps cannot estimate rates.
-4. Identify both broken behavior and headroom in healthy training: repeated or low-information interactions, saturation of easy tasks, insufficient feedback, narrow policies, or an experience distribution poorly matched to the current policy.
-5. Form the mechanism hypothesis first, including a competing explanation and a distinguishing observation; then choose a module or control. A metric moving in the desired direction can be caused by repetition, leakage, or reward rescaling.
+2. Reuse the EAU mechanism/applicability summary saved during setup, or the versioned mechanism map below, then read relevant supported, refuted, and unresolved project hypotheses. The full EAU paper is read during setup only; later experiments and reviews use the cached knowledge. Check whether task, model, phase, objective/feedback semantics, and implementation conditions transfer. EAU mechanisms are examples, not required components or a fixed training algorithm. Do not import independent test feedback through old experience under a training-only protocol.
+3. Read representative raw examples, targets, predictions, batch diagnostics, or interaction trajectories together with population metrics, subgroup distributions, and implementation details. Look for counterexamples as well as apparent successes; selected loss/reward-stratified dumps cannot estimate rates.
+4. Identify both broken behavior and headroom in healthy training: redundant or misprocessed data, missing coverage, incorrect targets, saturation, weak learning signal, ineffective updates, or resource bottlenecks. For interactive recipes also inspect repeated low-information interactions and narrow strategies.
+5. Form the mechanism hypothesis first, including a competing explanation and a distinguishing observation; then choose a module or control. A metric moving in the desired direction can be caused by repetition, leakage, or loss/reward rescaling.
 6. Trace source, reader, caching, propagation, effective boundary, consumer scope, and verification signals in the launched implementation. Preserve candidates whose implementation is currently unavailable.
 7. Rank a short list by expected value, applicability evidence, cost, exposure and verification time. Record the decision and the condition that would change it in the existing intervention map.
 
@@ -36,20 +36,22 @@ For example, without disclosure trajectories, propose sampling replies with fact
 
 EAU's user, environment, reward, and optimization directions are functional prompts. A system without a user simulator has no user-simulator intervention: map to data/feedback generation where appropriate, or mark it inapplicable.
 
+For pretraining, self-supervised learning, or supervised fine-tuning, start from that recipe's data pipeline, targets/objective, model execution, optimization and resource constraints. A candidate such as correcting target masking, balancing data slices, or resolving stalled data loading must have current code/sample evidence; it need not resemble an EAU intervention. Inspect applicable project references during setup and retain their versioned findings alongside the EAU summary.
+
 ## Trace the actual implementation
 
 Follow launch → resolved config → trainer/worker lifecycle → source → reader → propagation → effective boundary → observable use. Inspect the launched revision, imported module paths, runtime APIs, callbacks, schedulers, dataset iterators, prefetched buffers, and distributed broadcasts. A mutable file, CLI flag, or Python object alone is not a live control.
 
 | Surface | Mechanisms and implementation questions |
 |---|---|
-| Data and curriculum | Mixture, difficulty, filtering, weights; does the active sampler read updates, and which cached/prefetched examples remain? |
-| Objective and feedback | Loss/reward terms, judge policy, constraints; where are they computed, do their semantics change, and are incentives already broken? |
+| Data and curriculum | Collection, preprocessing, tokenization/augmentation, mixture, filtering, weights; does the active pipeline read updates, and which cached/prefetched examples remain? |
+| Objective and feedback | Targets, masks, loss terms/weights, and applicable rewards/judges; where are they computed, and do their semantics match the objective? |
 | Optimization | Learning rate, clipping, regularization, update ratios; which optimizer consumes the value, can schedules overwrite it, and is state migration needed? |
-| Interaction and generation | Prompts, tools, dynamics, decoding, exploration; which workers cache them, and which task/experience semantics change? |
-| Compute allocation | Rollouts, token/task budgets, evaluation frequency; does reshaping state require restart, and what useful exposure is lost? |
+| Model execution and generation | Model configuration, precision, sequence handling, and applicable decoding/prompts/tools; which consumers cache them, and do changes require rebuilt graphs or workers? |
+| Compute allocation | Batching/accumulation, sequence lengths, parallelism, data loading, token/task budgets and evaluation frequency; does reshaping state require restart, and what useful exposure is lost? Include rollout allocation where applicable. |
 | Observation | Logging, unbiased samples, independent permitted signals; will collection resolve a specific uncertainty without biased denominators? |
 
-For supervised training, inspect examples, predictions, losses and data slices. For RL/agent training, also inspect actions, observations, per-turn feedback and exposure. Instrument a missing distinguishing signal before treating a plausible mechanism as established.
+For pretraining/self-supervised training, inspect input/target construction, masks, loss by slice and update/throughput statistics. For supervised training, inspect examples, labels, predictions, losses and data slices. For RL/agent training, also inspect actions, observations, per-turn feedback and exposure. Use the evidence the recipe actually produces; instrument a missing distinguishing signal before treating a plausible mechanism as established.
 
 Classify runtime feasibility from evidence:
 
@@ -67,7 +69,7 @@ A new control needs a reader, validation, synchronization boundary, observable u
 
 Choose the unit that must share one configuration: episode, comparison group, gradient-accumulation update, or evaluation batch. Record old value/version preconditions and expected consumers. Prefer native atomic validation and idempotent request IDs when available. A local atomic file replace does not synchronize workers. On timeout inspect actual state before retrying; without acknowledgments or reliable version observations, record pending/partial/unknown rather than fully applied.
 
-Track in-flight rollouts, prefetched batches, reward requests, replay/buffers and asynchronous evaluations. State whether old data is drained, retained and labeled, discarded through a supported path, or untraceable. Separate control-read time, actual data exposure, update provenance, and adaptation delay. A worker acknowledgment at step 100 is not a clean learning window when steps 101–110 consume old batches. Late evaluation belongs to its source checkpoint and evaluator, not the arrival step. Unknown provenance limits comparison claims.
+Track prefetched batches, accumulated gradients, caches and asynchronous evaluations, plus in-flight rollouts, reward requests and replay where applicable. State whether old data is drained, retained and labeled, discarded through a supported path, or untraceable. Separate control-read time, actual data exposure, update provenance, and adaptation delay. A worker acknowledgment at step 100 is not a clean learning window when steps 101–110 consume old batches. Late evaluation belongs to its source checkpoint and evaluator, not the arrival step. Unknown provenance limits comparison claims.
 
 ### Decide what is worth testing
 
@@ -80,13 +82,14 @@ Assess objective headroom, applicability, distinguishing evidence, implementatio
 - Verify metric precision, dynamic range and detector coverage. Recompute baseline and treatment with the same detector, validated on positive/negative examples. When feasible use controls, matched phases, independent permitted evidence and repetitions; document concurrent changes and unresolved effects. A reversal can help but does not erase learned carryover or uniquely prove causality.
 - Under independent identically distributed failures at rate 6% and perfect detection, 30 clean samples occur with probability `0.94**30 ≈ 15.63%`; the chance of detecting at least one is about 84.37%. Correlation, sampling bias and incomplete detector coverage change this calculation.
 - Gradient clipping bounds the gradient supplied to the optimizer, not generally the final parameter displacement; momentum, preconditioning, learning rate and optimizer state matter. Check applied/skipped updates separately from gradient norms and entropy.
-- A process reward need not have positive mean. Examine relative incentives, bypass/termination paths, effective advantage signal and task performance. Repairing misleading metrics cannot repair a genuinely wrong incentive; preserve useful dense signal on its own merits.
-- Rapid entropy growth or a fixed-duration response pattern is a candidate empirical fingerprint. Calibrate by phase and subgroup, require persistence and independent corroboration before diagnosing collapse, and distinguish token entropy from behavioral diversity.
+- A lower reported loss may reflect changed reduction, masks, label mix or sample difficulty rather than improved predictions. Compare aligned data/denominators and protocol-permitted task metrics; verify which updates actually ran.
+- For reward-based training, a process reward need not have positive mean. Examine relative incentives, bypass/termination paths, effective advantage signal and task performance. Repairing misleading metrics cannot repair a genuinely wrong incentive; preserve useful dense signal on its own merits.
+- In generative/interactive training, rapid entropy growth or a fixed-duration response pattern is a candidate empirical fingerprint. Calibrate by phase and subgroup, require persistence and independent corroboration before diagnosing collapse, and distinguish token entropy from behavioral diversity.
 
 ## Recovery and reusable experience
 
-First locate the defect's impact: observation only, future interactions/data/rewards, or applied learning updates. Repair measurement without automatically restarting. For changed data/rewards, choose continuing, restoring or reinitializing using contamination, compatibility, the experimental objective and budget, not a universal fresh-run rule.
+First locate the defect's impact: observation only, future data/targets/losses or applicable interactions/rewards, or applied learning updates. Repair measurement without automatically restarting. For changed learning inputs/objectives, choose continuing, restoring or reinitializing using contamination, compatibility, the experimental objective and budget, not a universal fresh-run rule.
 
-Distinguish **revert control**, **restore checkpoint**, and **start fresh**. Restoring a control does not undo gradients, optimizer moments, replay contents, curriculum exposure, or past interactions. A reward change at step 300 reverted at 350 remains in the lineage unless compatible model/optimizer/scheduler/data state is also restored. Record what was restored, what remains inherited, and the resulting lineage. Verify checkpoint completeness for the actual trainer format before claiming recoverability.
+Distinguish **revert control**, **restore checkpoint**, and **start fresh**. Restoring a control does not undo gradients, optimizer moments, data exposure, or applicable replay contents and past interactions. A loss-weight change at step 300 reverted at 350 remains in the lineage unless compatible model/optimizer/scheduler/data state is also restored. Record what was restored, what remains inherited, and the resulting lineage. Verify checkpoint completeness for the actual trainer format before claiming recoverability.
 
 Reuse the project's experience, change log, inventory, and next-run plan. Label entries as observation, hypothesis, or supported lesson, with supported/refuted/unresolved verdicts where tested, source/version, applicable conditions, counterexamples, and pending window. Read related entries before a new hypothesis; explain changed conditions before repeating a refuted intervention. Do not promote a single observation to a universal principle or import disallowed evaluation feedback into steering memory. Persist review position, pending predictions, application state and actual next wake-up owner for handoff.
