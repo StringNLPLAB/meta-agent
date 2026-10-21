@@ -2,7 +2,7 @@
 
 A general skill for supervising long-running model training. It combines the EAU reference, prior experiment experience, and current behavior to discover mechanism hypotheses, maps them to actual code and runtime controls, then tests worthwhile changes and verifies uptake and outcomes.
 
-The workflow applies across supervised, reinforcement, and agent training. Each review can apply a justified change, collect evidence, observe a pending window, or plan a restart-required intervention. The experiment contract defines feedback boundaries; EAU reproduction uses training-side feedback only.
+The workflow applies across supervised, reinforcement, and agent training. Each scheduled review can apply a justified modification, collect evidence, observe a pending window, or plan a restart-required intervention. The experiment contract defines feedback boundaries; EAU reproduction uses training-side feedback only.
 
 Load [.agent/skills/meta-agent/SKILL.md](.agent/skills/meta-agent/SKILL.md) in Codex, or copy `.agent/skills/meta-agent/` into its skill directory. Then ask Codex to run the experiment and provide the training code location. Describe objectives, resources, budgets, review timing, and allowed changes in natural language; Codex translates them into the required configuration and commands.
 
@@ -14,8 +14,8 @@ Give Codex a request like this, replacing the two paths:
 Read /absolute/path/to/meta-agent/.agent/skills/meta-agent/SKILL.md and use it
 to run and improve the experiment in /absolute/path/to/training-checkout.
 Handle it end to end, including initial component discovery, training launch,
-periodic reviews, and Harbor trajectory recording. Reuse the existing recipe
-and settings where they are available.
+periodic reviews and modifications, and Harbor trajectory recording. Reuse
+the existing recipe and settings where they are available.
 ```
 
 You can add constraints in the same request, for example:
@@ -25,6 +25,8 @@ Use GPUs 0–3 for at most four hours. Review every 20 optimizer steps or ten
 minutes, whichever comes first. You may add training-side instrumentation
 and use verified runtime controls, but preserve the evaluation protocol and
 do not use independent test feedback to steer the experiment.
+At each review, apply changes justified by the observed training evidence
+within this scope, then verify their uptake and effects.
 ```
 
 Codex handles the setup and execution:
@@ -32,8 +34,10 @@ Codex handles the setup and execution:
 1. Inspect the paper, experience, training recipe, code, and available resources; resolve the experiment contract, run identity, paths, budgets, and review cadence.
 2. Run read-only discovery before training and save the candidate component map.
 3. Launch the existing training recipe, then arrange continuing supervision through an actual host-managed process or scheduler with ATIF export enabled.
-4. Verify training progress, the supervisor owner and next wake-up; review logs and raw trajectories, record predictions and outcomes, and apply only authorized changes through a verified project gate.
+4. At each configured time or step boundary, review logs and raw trajectories, reassess candidate modifications, register predictions, apply justified changes within the authorized scope through a verified project gate, and verify runtime uptake and subsequent outcomes. Track training progress, the supervisor owner and next wake-up throughout.
 5. Save completion or handoff records, remaining uncertainties, and the selected checkpoint under the declared protocol.
+
+Periodic modifications can target training-side instrumentation, environment or user-simulator behavior, reward logic, data selection, or optimization controls, where those components exist and the experiment authorizes changes. Codex chooses targets from the intervention map using the paper, applicable experience, and current training evidence. It records the intended mechanism, prediction, observation window, and recovery plan before applying a change. A review can also keep settings unchanged while an observation window is pending or the evidence does not support another modification.
 
 You do not need to write JSON, supply CLI flags, start training manually, or keep a terminal open. Codex reuses suitable project settings and asks only when a necessary objective, budget, permission, data source, or credential is missing. Reading the skill provides instructions; the request to run an experiment authorizes execution within its stated scope.
 
