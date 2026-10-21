@@ -1,10 +1,14 @@
 # Running discovery and periodic agent reviews
 
-Use `scripts/supervise.py` when the task calls for continuing supervision. It performs initial discovery, then invokes an agent at time/step boundaries to read training logs and raw trajectories, reassess hypotheses, and propose changes. Unlike `run_watch.py` and `checkpoint_watchdog.sh`, it actually calls the reasoning agent. The runner is a foreground process with persisted state, not an installed OS service; its host must keep it alive or invoke `--once` through an existing scheduler.
+This is an implementation reference for the outer Codex agent, not a manual setup checklist for the experiment owner. Accept the training code location and natural-language goals, resources, budget, review cadence, and allowed changes; derive the JSON contract and CLI arguments from that request and the existing project. Reuse an established recipe and sensible project settings rather than asking the user to fill in flags or JSON. Ask only about a necessary objective, budget, permission, data source, or credential that cannot be resolved from available context.
+
+The outer agent owns the full authorized workflow: inspect paper, experience and code; establish the contract and run bindings; complete read-only discovery; launch the existing training recipe; arrange an actual continuing supervisor with trajectory export; verify training health, owner and next wake-up; then finish or hand off under the declared budget. For an already-running job, bind to it and assess the current state without relaunching it. Loading the skill is not itself a request for an unbounded experiment.
+
+Use `scripts/supervise.py` for discovery and subsequent time/step-triggered reviews. Unlike `run_watch.py` and `checkpoint_watchdog.sh`, it actually calls the reasoning agent to read training logs and raw trajectories, reassess hypotheses, and propose changes. The runner remains a foreground review/gate process with persisted state; it does not launch training or install an OS service. The outer agent launches training and places the runner under a supported host job owner, or arranges repeated `--once` calls through a supported scheduler. Record the actual job/service/task identity and next wake-up, and verify ownership survives the intended session lifetime before claiming unattended supervision. If the host cannot provide that lifetime, report the concrete limitation and handoff needed; do not present a manual terminal session as completed automation.
 
 ## Establish inputs and run discovery first
 
-Provide an exact training root, run identity, planned/current log path, training trajectory directory, and a JSON experiment contract. The log and trajectory directory may be absent before training. With an EAU `train_<name>_<YYYYMMDD>_<HHMMSS>.log` filename, the supplied run must match its inferred identity or a registered `reports/run_aliases.json` mapping. Other log filenames use the explicitly bound run/path pair. The runner never picks another run by mtime.
+Resolve an exact training root, unique run identity, planned/current log path, training trajectory directory, and experiment contract from the user's request and the inspected recipe. Save the contract as JSON for the runner; the user need not create it. The log and trajectory directory may be absent before training. With an EAU `train_<name>_<YYYYMMDD>_<HHMMSS>.log` filename, the supplied run must match its inferred identity or a registered `reports/run_aliases.json` mapping. Other log filenames use the explicitly bound run/path pair. The runner never picks another run by mtime.
 
 Example contract, stored in the **training checkout**, with values chosen for that experiment:
 
@@ -28,11 +32,15 @@ Example contract, stored in the **training checkout**, with values chosen for th
 
 Reuse existing record paths when available; the map defaults to `reports/intervention_map_<RUN>.md`, and the other two paths above are defaults. All writable records must remain under the training root's `reports/`. Permission to read a source is governed by the contract, not inferred from its presence on disk. The contract's descriptions guide the agent; they are not filesystem access-control rules. Configure stronger source isolation through the host when required.
 
-Run discovery **before launching training**. The example uses Bash arguments shared between preflight and continuing supervision:
+Run discovery **before launching training**. The following Bash example shows the invocation the outer agent derives; all values are illustrative. Persist the resolved arguments with the run's launch metadata so a new shell or host job can reconstruct them:
 
 ```bash
+SKILL_DIR=/absolute/path/to/meta-agent/.agent/skills/meta-agent
+TRAIN_ROOT=/absolute/path/to/training-checkout
+RUN=RUN
+
 SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
-  --root "$TRAIN_ROOT" --run RUN
+  --root "$TRAIN_ROOT" --run "$RUN"
   --log logs/train.log
   --trajectories checkpoints/EXP/debug_trajectories
   --contract reports/meta_agent_contract.json
@@ -41,12 +49,13 @@ SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
   --export-atif)
 
 "${SUPERVISE[@]}" --once
-# Inspect discovery findings and reports/supervision/RUN/state.json.
-# Launch the separately authorized training job only after discovery completes.
-"${SUPERVISE[@]}"
 ```
 
-The first call must return an intervention map and identify paper, code and experience sources or explicit availability gaps. It cannot execute an intervention. The next call resumes that discovery state. If training was already running when supervision began, this is a takeover assessment at the actual observed step; it does not invent a preflight or prior reviews.
+Confirm `discovery_complete=true` in `reports/supervision/<RUN>/state.json` and inspect `reports/intervention_map_<RUN>.md` (or the contract's selected map path). The first call must return an intervention map and identify paper, code and experience sources or explicit availability gaps. It cannot execute an intervention. If it fails, inspect the saved request and retry the same read-only discovery with its prior artifacts.
+
+After discovery, launch the authorized training recipe through the project's supported job system. Submit the resolved supervision command **without `--once`** to the verified host owner, or schedule repeated `--once` invocations. The next invocation resumes the saved discovery state; it does not depend on keeping the example's shell variables or Bash session alive. Verify the exact training log is advancing, the supervisor's recorded process/task is live, export is enabled, and the next review is actually arranged. Store the training job and supervisor identities together with their ownership and lifetime. If training was already running when supervision began, discovery is a takeover assessment at the actual observed step; do not invent a preflight or prior reviews.
+
+The outer agent also owns the training recipe's resource/stop budget and checkpoint completion; `--stop-step` only ends supervision after a final review. Configure training's own bounded recipe or host job separately within the same automated launch workflow. Do not infer that the runner will stop a trainer.
 
 These numbers are examples, not defaults for another recipe. Use `--every-steps N`, `--every-seconds S`, or both (either being due triggers one serial review). `--first-review S` shifts the first step boundary; boundaries at/before the selected log's resume anchor are excluded. Time intervals start after the last completed review. `--agent-timeout` defaults to 600 seconds and `--executor-timeout` to 120; budget initial paper/code discovery separately from review cadence, and choose timeouts that fit its scope. `--poll-seconds` defaults to 5, with a maximum of 60. The completed-line step regex defaults to `step:(\d+) - `; adapt `--step-regex` with exactly one capturing group for other trainers.
 
@@ -73,6 +82,8 @@ The runner validates record structure using `check_mandate.validate_review`, pub
 ## Optional execution through a project gate
 
 Default `--mode propose` performs no training/config writes. To enable bounded operations, explicitly select `--mode apply`, declare operation identifiers in `contract.allowed_operations`, and provide `--executor-command` as a JSON argv array. The reasoning agent remains read-only. Only a regular review with `decision=apply` can invoke this gate; discovery, reconciliation and final review cannot.
+
+The outer Codex agent translates the user's natural-language authorization into this configuration and reuses that scope for subsequent reviews. The gate is automatic programmatic validation/execution, not a request for per-review user confirmation. When needed, the outer agent may implement a compatible gate for already-authorized operations after inspecting the actual readers and consistency boundaries. Ask only when a necessary operation or restart falls outside the existing scope or a required input cannot be resolved. Gate availability never proves that arbitrary source edits affect resident workers; preserve runtime feasibility and the authorized restart plan.
 
 The agent supplies `action.operation` and `action.arguments_json` (a JSON object encoded as a string), plus a complete pending application review with old/new state, mechanism, prediction/window and recovery. The controller durably records that prediction **before** calling the configured executable. The executor receives JSON on stdin:
 

@@ -1,19 +1,25 @@
 ---
 name: meta-agent
-description: Supervise long-running model training, using papers, prior experience, and current behavior to discover and test interventions. Run initial component discovery and periodic log/trajectory reviews, verify runtime uptake and outcomes, and plan intra-run or restart-required changes when monitoring or steering experiments across training frameworks.
+description: Set up, launch, and supervise model-training experiments from a training checkout and natural-language requirements. Use papers, prior experience, and current behavior for initial component discovery and periodic log/trajectory reviews, test interventions, verify uptake and outcomes, and plan intra-run or restart-required changes across training frameworks.
 ---
 
 # Meta-Agent
 
 Improve training through evidence-driven investigation and intervention. Understand the objective and allowed feedback, generate mechanism hypotheses, map them to the actual implementation, and decide what is feasible and worth testing. Existing controls are execution paths, not the limit of the search.
 
-## Start with discovery, then arrange real supervision
+## Own experiment setup, launch and supervision
+
+When this skill is loaded **inside a runner request**, complete only the requested discovery/review/reconciliation/final pass and return its structured response. Do not launch training, recursively launch a supervisor, or write the controller's records. The top-level experiment agent owns orchestration; the runner's reasoning calls remain read-only.
+
+For a top-level request to run or improve an experiment, take responsibility for the whole workflow. Accept the skill location, training-code location, and ordinary language about objectives, resources, budgets, review timing and permitted changes. Inspect the existing launcher, recipes, data paths, configuration and run records; translate these requirements into concrete arguments and an experiment contract yourself. Reuse known session constraints and sensible project defaults. Ask only for essential constraints that cannot be established from the request or repository; do not require the user to write JSON, choose CLI flags, start training, or keep a shell session open.
 
 Before launching training, establish the contract below, read the paper and relevant experience, inspect the code and control readers, and produce the intervention map. Identify candidate components and unknowns before proposing or applying changes. For an already-running job, perform this initial assessment before steering it and identify the takeover step without inventing a past preflight.
 
-For ongoing supervision, use the [runner instructions](references/supervision.md). The bundled `scripts/supervise.py` invokes a skill-loaded agent for discovery, then at configured time/step triggers to read logs and raw trajectories and choose a justified action. Run its `--once` preflight before training, then keep the runner alive or use an existing host scheduler for subsequent passes. Default operation is proposal-only; explicit execution uses a configured project gate and declared operation scope. Save pending predictions and verify the actual next wake-up owner.
+Use the [runner instructions](references/supervision.md) as implementation guidance for the agent. Resolve exact run/log/trajectory paths and a bounded supervision-call budget, write the contract, and run the `--once` discovery preflight. After it completes, launch the project's training entry point with the resolved configuration within the authorized experiment scope. Record the actual launch command, code/configuration provenance, trainer identity, logs and checkpoint location. Verify that training started successfully.
 
-When this skill is loaded **inside a runner request**, complete only the requested discovery/review/reconciliation/final pass and return its structured response; do not recursively launch a supervisor or write the controller's records. A watcher that only checks records does not substitute for this agent loop.
+Start continuing supervision through the host's supported process manager or scheduler and record its actual process/task identity and next review trigger. The bundled `scripts/supervise.py` invokes a skill-loaded agent at configured time/step boundaries; it is a foreground worker, so the top-level agent must arrange its lifetime. Verify that the trainer and supervisor remain alive and bound to the intended run. A transient command/session identifier alone does not prove supervision will survive the current turn; establish a real owner or report the specific host limitation. A watcher that only checks records does not substitute for this agent loop.
+
+Enable `--export-atif` when recording the meta-agent's own trajectory, and retain pending predictions through completion or handoff. Default execution is proposal-only. When the task authorizes interventions, configure a compatible project gate and declared operation scope yourself; keep runtime validation and uptake checks intact. Continue routine launch and supervision work under the user's existing authorization rather than asking the user to execute generated commands.
 
 ## Establish the experiment contract
 

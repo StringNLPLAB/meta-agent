@@ -4,76 +4,48 @@ A general skill for supervising long-running model training. It combines the EAU
 
 The workflow applies across supervised, reinforcement, and agent training. Each review can apply a justified change, collect evidence, observe a pending window, or plan a restart-required intervention. The experiment contract defines feedback boundaries; EAU reproduction uses training-side feedback only.
 
-Load [.agent/skills/meta-agent/SKILL.md](.agent/skills/meta-agent/SKILL.md) in your agent, or copy `.agent/skills/meta-agent/` into its skill directory. To run initial component discovery and subsequent agent reviews automatically, start the bundled runner as below.
+Load [.agent/skills/meta-agent/SKILL.md](.agent/skills/meta-agent/SKILL.md) in Codex, or copy `.agent/skills/meta-agent/` into its skill directory. Then ask Codex to run the experiment and provide the training code location. Describe objectives, resources, budgets, review timing, and allowed changes in natural language; Codex translates them into the required configuration and commands.
 
-## Start supervision
+## Start an experiment
 
-Use Linux with Python 3 and an installed, authenticated Codex CLI. The runner uses the CLI's configured model and loads the skill into each read-only agent call. Another compatible agent can be supplied with `--agent-command`; see the [backend instructions](.agent/skills/meta-agent/references/supervision.md#agent-backend-and-returned-review).
+Give Codex a request like this, replacing the two paths:
 
-1. Choose the training checkout, a unique run ID, the exact planned/current training log, and the training trajectory directory. Logs and trajectories may be absent before training.
-2. Create `reports/meta_agent_contract.json` inside that training checkout using the [contract example](.agent/skills/meta-agent/references/supervision.md#establish-inputs-and-run-discovery-first). Set the objective, budget, guardrails, allowed/excluded feedback, evaluation protocol, and checkpoint-selection rule. Leave `allowed_operations` empty for proposal-only supervision.
-3. From this repository's root, replace the example training path, log/trajectory paths, run ID, and budgets below, then run discovery:
-
-```bash
-SKILL_DIR="$PWD/.agent/skills/meta-agent"
-TRAIN_ROOT=/absolute/path/to/training-checkout
-RUN=my_run
-
-SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
-  --root "$TRAIN_ROOT" --run "$RUN"
-  --log logs/train.log
-  --trajectories trajectories
-  --contract reports/meta_agent_contract.json
-  --every-steps 20 --every-seconds 600
-  --max-calls 30 --stop-step 200 --idle-timeout 1800
-  --export-atif)
-
-# Before launching training: one discovery pass.
-"${SUPERVISE[@]}" --once
+```text
+Read /absolute/path/to/meta-agent/.agent/skills/meta-agent/SKILL.md and use it
+to run and improve the experiment in /absolute/path/to/training-checkout.
+Handle it end to end, including initial component discovery, training launch,
+periodic reviews, and Harbor trajectory recording. Reuse the existing recipe
+and settings where they are available.
 ```
 
-Inspect `$TRAIN_ROOT/reports/intervention_map_<RUN>.md` and confirm `discovery_complete` is `true` in `$TRAIN_ROOT/reports/supervision/<RUN>/state.json`. The map identifies candidate components, mechanisms, applicability, runtime feasibility, and unknowns. If discovery failed, inspect that request's stdout/stderr and rerun the same command; it repeats read-only discovery with the prior artifacts.
+You can add constraints in the same request, for example:
 
-Launch training separately after discovery, then start continuing supervision in the **same Bash session**:
-
-```bash
-"${SUPERVISE[@]}"
+```text
+Use GPUs 0–3 for at most four hours. Review every 20 optimizer steps or ten
+minutes, whichever comes first. You may add training-side instrumentation
+and use verified runtime controls, but preserve the evaluation protocol and
+do not use independent test feedback to steer the experiment.
 ```
 
-This foreground process invokes the agent to read the bound log and raw trajectories, reassess pending predictions, and propose changes. Keep it running in a terminal/session managed by your host. To resume in another shell, recreate the same variables and `SUPERVISE` array, then run it again; saved state is reused. Loading the skill alone does not start a background process, and the runner does not launch training or install a service.
+Codex handles the setup and execution:
 
-The values above are examples. Choose either trigger or both; if both are configured, either becoming due triggers one serial review:
+1. Inspect the paper, experience, training recipe, code, and available resources; resolve the experiment contract, run identity, paths, budgets, and review cadence.
+2. Run read-only discovery before training and save the candidate component map.
+3. Launch the existing training recipe, then arrange continuing supervision through an actual host-managed process or scheduler with ATIF export enabled.
+4. Verify training progress, the supervisor owner and next wake-up; review logs and raw trajectories, record predictions and outcomes, and apply only authorized changes through a verified project gate.
+5. Save completion or handoff records, remaining uncertainties, and the selected checkpoint under the declared protocol.
 
-| Argument | Behavior |
-|---|---|
-| `--every-steps N` | Review at training-step boundaries. The default log format is `step:<N> - ...`; use `--step-regex` for another format. |
-| `--every-seconds S` | Review after this interval since the last completed review, even without a new step. |
-| `--once` | Perform at most one due pass and exit. An existing host scheduler can invoke this repeatedly. |
-| `--max-calls N` | Total persisted agent-call budget, including discovery, failed calls, reconciliation, and final review. Required for continuous mode. |
-| `--stop-step N` | Request a read-only final review when this step is observed; training is left running. |
-| `--idle-timeout S` | Hand off supervision when the bound log stops advancing for this long. |
-| `--export-atif` | Export the meta-agent's own visible messages, tool calls and decisions as an ATIF trajectory after each pass. |
+You do not need to write JSON, supply CLI flags, start training manually, or keep a terminal open. Codex reuses suitable project settings and asks only when a necessary objective, budget, permission, data source, or credential is missing. Reading the skill provides instructions; the request to run an experiment authorizes execution within its stated scope.
 
-Default `--mode propose` writes review records without changing training/configuration. For execution, configure a project gate with `--mode apply`, `--executor-command`, and matching `contract.allowed_operations`; follow the [gate interface](.agent/skills/meta-agent/references/supervision.md#optional-execution-through-a-project-gate). Discovery remains read-only. After an uncertain execution, resumption reconciles actual state without automatically retrying the operation.
+The project gate is a programmatic validation and execution interface, not a prompt for manual confirmation at every review. Codex derives its allowed operations from your existing authorization and can implement a compatible gate within that scope. It verifies which changes can reach running workers; code changes that require a restart follow the experiment's authorized restart plan.
 
-Reviews default to `reports/change_log.md`; maps, experience, and supervision state stay under the training checkout's `reports/`. Each `reports/supervision/<RUN>/requests/<ID>/` retains the prompt, response, stdout/stderr, and any operation receipt. See the [full runner instructions](.agent/skills/meta-agent/references/supervision.md) for log/run aliases, timeouts, explicit settings changes, and recovery.
+The host needs Python 3, an authenticated Codex CLI or compatible agent backend, the training environment, and a supported way to own continuing jobs. Codex must establish and verify that owner before claiming unattended supervision. The bundled runner remains a foreground review/gate process; the outer Codex agent launches training and arranges its lifetime. Skill text alone cannot keep a process alive after its host session ends. See the [implementation reference](.agent/skills/meta-agent/references/supervision.md) for the CLI, contract, execution gate, and recovery details used by Codex.
 
 ## Export meta-agent trajectories
 
-The startup example enables `--export-atif`. Each agent pass produces `requests/<ID>/trajectory.json` and an `export.json` coverage manifest, with a run-level `trajectories.json` index. These record the **meta-agent**; `--trajectories` still points to the **training agent's** trajectory input. The exporter uses the matching Codex session when available and labels incomplete coverage when only stdout or a custom backend's prompt/response is available. It does not change the read-only agent and explicit execution-gate boundary.
+When trajectory recording is requested, Codex enables `--export-atif`. Each pass produces `requests/<ID>/trajectory.json` and an `export.json` coverage manifest, with a run-level `trajectories.json` index under the training checkout's `reports/supervision/<RUN>/`. These record the **meta-agent's** messages, tool calls, and decisions; the training agent's raw trajectories remain separate review inputs. The exporter uses the matching Codex session when available and labels incomplete coverage.
 
-To export existing requests without calling an agent, or prepare a Harbor viewer job:
-
-```bash
-python3 "$SKILL_DIR/scripts/export_run.py" \
-  --run-dir "$TRAIN_ROOT/reports/supervision/$RUN" \
-  --harbor-out "/tmp/meta-agent-jobs/$RUN"
-
-# Optional: requires Harbor to be installed in this environment.
-harbor view /tmp/meta-agent-jobs
-```
-
-ATIF export itself uses only Python's standard library. Add `--codex-sessions /path/to/sessions` to either command when sessions are stored outside the current Codex home. See [export details and coverage limits](.agent/skills/meta-agent/references/supervision.md#export-meta-agent-trajectories) for the archive layout and Harbor integration.
+You can also ask: “Export the existing meta-agent requests and prepare a Harbor viewer bundle for this run.” Codex can do this without new agent calls; Harbor is needed only to open its viewer or perform Harbor-specific validation. ATIF generation uses Python's standard library. See [export details and commands](.agent/skills/meta-agent/references/supervision.md#export-meta-agent-trajectories) for coverage limits and Harbor integration.
 
 The [intervention discovery guide](.agent/skills/meta-agent/references/intervention-discovery.md) explains candidate selection. The optional [EAU / verl adapter](.agent/skills/meta-agent/references/eau-adapter.md) documents project-specific helpers and layouts; its watchers check records without invoking the reasoning agent.
 
