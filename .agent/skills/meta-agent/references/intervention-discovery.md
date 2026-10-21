@@ -5,7 +5,7 @@ Read this at the initial assessment and when new evidence changes the hypothesis
 ## Generate candidates before choosing controls
 
 1. Establish the primary objective, decision horizon, remaining budget, allowed feedback, and unacceptable regressions from the experiment contract.
-2. Read the EAU method, examples and failure analyses below, then relevant supported, refuted, and unresolved project hypotheses. Check whether task, model, phase, reward semantics, and implementation conditions transfer. Do not import independent test feedback through old experience under a training-only protocol.
+2. Reuse the EAU mechanism/applicability summary saved during setup, or the versioned mechanism map below, then read relevant supported, refuted, and unresolved project hypotheses. The full EAU paper is read during setup only; later experiments and reviews use the cached knowledge. Check whether task, model, phase, reward semantics, and implementation conditions transfer. Do not import independent test feedback through old experience under a training-only protocol.
 3. Read representative raw samples/trajectories together with population metrics, subgroup distributions, and implementation details. Look for counterexamples as well as apparent successes; reward-stratified dumps cannot estimate rates.
 4. Identify both broken behavior and headroom in healthy training: repeated or low-information interactions, saturation of easy tasks, insufficient feedback, narrow policies, or an experience distribution poorly matched to the current policy.
 5. Form the mechanism hypothesis first, including a competing explanation and a distinguishing observation; then choose a module or control. A metric moving in the desired direction can be caused by repetition, leakage, or reward rescaling.
@@ -18,7 +18,7 @@ Read this at the initial assessment and when new evidence changes the hypothesis
 
 The bundled [EAU manuscript](eau_manuscript_ref.pdf) is an 18-page preprint, PDF creation metadata `2026-10-12T10:00:18Z`, SHA-256 `a7128aa6ef3f6ff2203d3a4662499e5ef18d281a3e5d13997d7469debde4d323`. No explicit revision identifier is printed. These locations refer to this local version, not another draft or the older handover code.
 
-Read §§4.1–4.6 (pp. 4–7), §5.1 (pp. 7–8), §5.4 (p. 9), and Appendix A.1–A.3 / Tables 6–8 (pp. 14–16). At first use, retain a compact mechanism/applicability mapping with this source identifier; later reread only relevant sections when conditions change.
+During initial setup, read §§4.1–4.6 (pp. 4–7), §5.1 (pp. 7–8), §5.4 (p. 9), and Appendix A.1–A.3 / Tables 6–8 (pp. 14–16). Retain a compact mechanism/applicability mapping with this source identifier in the existing experience or intervention map. Subsequent experiments and periodic reviews reuse that mapping; starting a new run does not require another full-paper read. Refresh setup when the reference version changes or the saved mapping is unavailable. The table below is a bundled versioned summary that can be reused without reopening the PDF; identify whether a finding comes from that summary, saved setup notes, or a direct setup reading.
 
 | Paper report and location | Candidate mechanism / symptom to investigate | Applicability, limits, and distinguishing evidence |
 |---|---|---|
