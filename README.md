@@ -54,3 +54,23 @@ The [intervention discovery guide](.agent/skills/meta-agent/references/intervent
 Run offline helper regression checks with `python3 -m unittest discover -s .agent/skills/meta-agent/scripts/tests -v`. Fixtures use temporary training roots and do not connect to training processes.
 
 Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch contains the skill and supervision helpers; training frameworks, weights, and run outputs remain outside the package.
+
+## Citation
+
+If you use this skill in your research, please cite:
+
+```bibtex
+@misc{cai2026eauenvironmentagentusercoevolutiontraining,
+  title = {EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents},
+  author = {Min Cai and Dan Zhang and Gao Xing and Libin Ma and Zhaohui Xu and Xi Ye},
+  year = {2026},
+  eprint = {2610.16523},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2610.16523}
+}
+```
+
+## License
+
+Original project contributions are licensed under the [MIT License](LICENSE.txt). Existing third-party notices and licensing terms are retained in [NOTICE](NOTICE) and [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt). The bundled reference paper retains its own copyright and distribution terms.
