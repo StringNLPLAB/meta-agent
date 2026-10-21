@@ -1,4 +1,6 @@
-# Meta-Agent Skill
+# EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents
+
+This is the repo that contains the meta-agent skill design in the "EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents".
 
 ![Meta-Agent framework](assets/framework.png)
 
@@ -8,7 +10,11 @@ The workflow applies across pretraining, self-supervised learning, supervised le
 
 Load [.agent/skills/meta-agent/SKILL.md](.agent/skills/meta-agent/SKILL.md) in Codex, or copy `.agent/skills/meta-agent/` into its skill directory. Then ask Codex to run the experiment and provide the training code location. Describe objectives, resources, budgets, review timing, and allowed changes in natural language; Codex translates them into the required configuration and commands.
 
-## Setup
+## 🔥News
+
+- [2026/10/21] We released the meta-agent skill introduced in our EAU paper, with support for recording meta-agent trajectories and viewing them in Harbor.
+
+## ⚙️Setup
 
 Codex reads the bundled [EAU reference paper](.agent/skills/meta-agent/references/eau_manuscript_ref.pdf) once during setup and saves its version, key mechanisms, applicability conditions, and limitations in the existing experience record or intervention map. This setup is automatic; you do not need to run a separate command.
 
@@ -16,7 +22,7 @@ EAU is a method reference for generating and testing improvement hypotheses, not
 
 Subsequent experiments and periodic reviews reuse that cached summary rather than rereading the paper. Setup is repeated only when the paper version changes or the saved summary is missing. Each experiment still needs its own component discovery against the current training recipe, code, resources, and evidence.
 
-## Start an experiment
+## 🔍Start an experiment
 
 Give Codex a request like this, replacing the two paths:
 
@@ -55,7 +61,7 @@ The project gate is a programmatic validation and execution interface, not a pro
 
 The host needs Python 3, an authenticated Codex CLI or compatible agent backend, the training environment, and a supported way to own continuing jobs. Codex checks each project's launch interface, progress logs, diagnostic sources, and available runtime controls; the skill does not supply a tested integration for every training framework. It must establish and verify the job owner before claiming unattended supervision. The bundled runner remains a foreground review/gate process; the outer Codex agent launches training and arranges its lifetime. Skill text alone cannot keep a process alive after its host session ends. See the [implementation reference](.agent/skills/meta-agent/references/supervision.md) for the CLI, contract, execution gate, and recovery details used by Codex.
 
-## Export meta-agent trajectories
+## 🖨️Export meta-agent trajectories
 
 When trajectory recording is requested, Codex enables `--export-atif`. Each pass produces `requests/<ID>/trajectory.json` and an `export.json` coverage manifest, with a run-level `trajectories.json` index under the training checkout's `reports/supervision/<RUN>/`. These record the **meta-agent's** messages, tool calls, and decisions; training diagnostic samples or interaction trajectories remain separate review inputs. The exporter uses the matching Codex session when available and labels incomplete coverage.
 
