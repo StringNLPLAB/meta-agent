@@ -188,6 +188,11 @@ class Supervisor:
         self.validate_contract()
         self.agent_command = argv_json(args.agent_command) if args.agent_command else None
         self.executor = argv_json(args.executor_command) if args.executor_command else None
+        if args.codex_sessions and not args.export_atif:
+            raise ValueError("--codex-sessions requires --export-atif")
+        native_home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser()
+        self.codex_sessions = (Path(args.codex_sessions).expanduser().resolve() if args.codex_sessions
+                               else native_home.resolve() / "sessions")
         if args.mode == "apply" and (not self.executor or not self.contract.get("allowed_operations")):
             raise ValueError("Apply mode needs --executor-command and contract.allowed_operations")
         if args.mode != "apply" and self.executor:
@@ -284,6 +289,35 @@ class Supervisor:
     def event(self, kind, **values):
         with (self.directory / "events.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"time": self.clock(), "event": kind, **values}, ensure_ascii=False) + "\n")
+
+    def journal_request(self, request):
+        path = Path(request["directory"]) / "request.json"
+        previous = read_json(path) if path.exists() else {}
+        atomic_json(path, {**previous, **request})
+
+    def finish_trace(self, request, outcome, error=None):
+        """Observation failures never change a completed intervention's state."""
+        request.update(outcome=outcome, finished_at=self.clock())
+        if error is not None:
+            request["error"] = f"{type(error).__name__}: {error}"
+        try:
+            self.journal_request(request)
+            if not self.args.export_atif:
+                return
+            from export_atif import export_request
+            from export_run import write_index
+            export_request(Path(request["directory"]), run=self.run,
+                           sessions_dir=self.codex_sessions, status=outcome)
+            write_index(self.directory, run=self.run)
+            self.event("trajectory_exported", request_id=request["id"], outcome=outcome,
+                       trajectory=f"requests/{request['id']}/trajectory.json")
+        except Exception as export_error:
+            message = f"{type(export_error).__name__}: {export_error}"
+            print(f"[SUPERVISE] trajectory export warning for {request['id']}: {message}", file=sys.stderr, flush=True)
+            try:
+                self.event("trajectory_export_failed", request_id=request["id"], error=message)
+            except OSError:
+                pass
 
     def snapshot(self):
         before = self.state["cursor"]
@@ -389,16 +423,28 @@ handoff; it hands off ONLY this supervisor and does not stop training.
                                        pass_fds=(() if guard is None else (guard,)),
                                        start_new_session=True, env=dict(os.environ, META_AGENT_REQUEST=str(directory / "request.json"),
                                        META_AGENT_RESPONSE=str(directory / "response.json"), META_AGENT_PHASE=self.state["active_request"]["phase"]))
-            self.state["active_request"].update(stage=stage, child_pid=process.pid, child_start=pid_start(process.pid))
-            self.save()
+            request = self.state["active_request"]
+            details = {"started_at": self.clock(), "outcome": "running"}
+            request.setdefault("processes", {})[stage] = details
             try:
+                request.update(stage=stage, child_pid=process.pid, child_start=pid_start(process.pid))
+                self.save()
+                self.journal_request(request)
                 process.communicate(input=data.encode(), timeout=timeout)
-            except BaseException:
-                stop_owned_child(process)
+                details["outcome"] = "completed" if process.returncode == 0 else "failed"
+            except BaseException as error:
+                details.update(outcome=("timed_out" if isinstance(error, subprocess.TimeoutExpired)
+                                        else "interrupted" if isinstance(error, KeyboardInterrupt) else "failed"),
+                               error=f"{type(error).__name__}: {error}")
                 raise
-            stop_owned_child(process)
-        self.state["active_request"].update(child_pid=None, child_start=None)
-        self.save()
+            finally:
+                try:
+                    stop_owned_child(process)
+                finally:
+                    details.update(returncode=process.returncode, finished_at=self.clock())
+                    request.update(child_pid=None, child_start=None)
+                    self.save()
+                    self.journal_request(request)
         return process.returncode
 
     def row(self, review, request, suffix):
@@ -508,9 +554,22 @@ handoff; it hands off ONLY this supervisor and does not stop training.
                    runtime_verified=False)
 
     def review(self, phase, step, previous=None):
+        before = self.state["calls"]
+        try:
+            self._review(phase, step, previous)
+        except BaseException as error:
+            request = self.state.get("active_request")
+            if self.state["calls"] > before and request:
+                self.finish_trace(request, "interrupted" if isinstance(error, KeyboardInterrupt) else "failed", error)
+            raise
+        else:
+            self.finish_trace(self.state["last_request"], "completed")
+
+    def _review(self, phase, step, previous=None):
         request = {"id": uuid.uuid4().hex, "phase": phase, "step": step, "started_at": self.clock(),
                    "log_offset": self.state["cursor"].get("offset", 0), "stage": "prepared",
-                   "agent_timeout_seconds": self.args.agent_timeout}
+                   "agent_timeout_seconds": self.args.agent_timeout, "run": self.run,
+                   "backend": "custom" if self.agent_command else "codex", "skill_sha": self.binding["skill_sha"]}
         directory = self.directory / "requests" / request["id"]
         directory.mkdir(parents=True)
         request["directory"] = str(directory)
@@ -650,6 +709,8 @@ def parser():
     result.add_argument("--executor-timeout", type=positive, default=120)
     result.add_argument("--mode", choices=("propose", "apply"), default="propose")
     result.add_argument("--agent-command", help="Optional JSON argv; prompt on stdin, JSON response on stdout or META_AGENT_RESPONSE")
+    result.add_argument("--export-atif", action="store_true", help="Export meta-agent interactions to ATIF after each attempted pass")
+    result.add_argument("--codex-sessions", help="Native Codex sessions source for exact thread matching; requires --export-atif")
     result.add_argument("--executor-command", help="Trusted project gate JSON argv; operation on stdin, JSON receipt on stdout")
     result.add_argument("--max-calls", type=int, help="Total persisted agent-call budget, including discovery/reconciliation/final")
     result.add_argument("--stop-step", type=int, help="Final review when this completed step is observed; never stops training")

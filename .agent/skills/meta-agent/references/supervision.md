@@ -37,7 +37,8 @@ SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
   --trajectories checkpoints/EXP/debug_trajectories
   --contract reports/meta_agent_contract.json
   --every-steps 20 --every-seconds 600
-  --max-calls 30 --stop-step 200 --idle-timeout 1800)
+  --max-calls 30 --stop-step 200 --idle-timeout 1800
+  --export-atif)
 
 "${SUPERVISE[@]}" --once
 # Inspect discovery findings and reports/supervision/RUN/state.json.
@@ -118,3 +119,45 @@ After a failed/timed-out/interrupted request, the next invocation performs a rea
 Root/run/log/trajectory bindings cannot be reused for another run. Contract, cadence, backend/mode and skill changes are detected; use `--adopt-settings` explicitly to retain the prior binding in history and redo read-only discovery before proceeding. Do not leave that flag in a recurring invocation. Increasing the call budget does not itself rewrite the contract. If a prediction/window or effective configuration is unknown, preserve that uncertainty during reassessment.
 
 A successful final pass records the handoff under the declared checkpoint/evaluation rules; it does not run disallowed evaluation or terminate training. `budget_exhausted`, `idle_handoff`, `agent_handoff` and `needs_reconciliation` are distinct from `completed`. Inspect the saved state and arrange an actual responsible owner whenever supervision stops before the experiment is finished.
+
+## Export meta-agent trajectories
+
+Add `--export-atif` to the runner to export each discovery, review, reconciliation and final agent call, including failed or interrupted calls. This is an observation option: enabling or disabling it does not require `--adopt-settings`, invoke an additional agent, or change the experiment contract. `--once` still performs at most one due pass and installs no service.
+
+This records the **meta-agent's own** visible messages, source-reading tool calls, tool results and structured decisions. The runner's `--trajectories` argument remains the directory of **training trajectories that the meta-agent reads**. The two have different roles.
+
+Exports use the [Harbor Agent Trajectory Interchange Format (ATIF)](https://docs.harborframework.com/agents/atif), version 1.7, using only Python's standard library. Each request directory gains:
+
+- `trajectory.json`: the exported ATIF trajectory for this pass.
+- `export.json`: source provenance, hashes, coverage and any export gaps or errors.
+- A visible-event session archive when a matching native Codex session is available. `encrypted_content` fields are excluded from this archive.
+
+`reports/supervision/<RUN>/trajectories.json` indexes the request exports. Existing prompt/response/stdout/stderr and operation receipts remain the source records. Export errors retain those records and produce a warning; they do not trigger agent or training-operation retries.
+
+For the default Codex backend, the exporter uses the invocation's `thread_id` to find the exact session under the current `CODEX_HOME`'s `sessions/`, or `~/.codex/sessions/` when `CODEX_HOME` is unset. To use another location, add `--codex-sessions /absolute/path/to/sessions`. This selects where the exporter reads sessions; it does not rewrite Codex configuration, authentication or environment. The manifest records source and archived hashes so the filtered archive remains distinguishable from the native source.
+
+If the native session is missing, the exporter falls back to available CLI JSON stdout. For custom backends, a prompt/response-only record is valid but has partial coverage. Inspect `export.json` before treating an export as a complete tool trace. The exporter records only supplied visible events and usage; it does not reconstruct hidden reasoning or invent token/cost figures. A gate invocation appears as a separate controller actor step with `llm_call_count=0`, tied to the recorded operation and receipt. It is not represented as another agent decision or proof of worker uptake.
+
+To export an existing run without new agent calls:
+
+```bash
+python3 "$SKILL_DIR/scripts/export_run.py" \
+  --run-dir "$TRAIN_ROOT/reports/supervision/$RUN"
+```
+
+To also create a Harbor job/trial layout for the viewer:
+
+```bash
+python3 "$SKILL_DIR/scripts/export_run.py" \
+  --run-dir "$TRAIN_ROOT/reports/supervision/$RUN" \
+  --harbor-out "/tmp/meta-agent-jobs/$RUN"
+
+# Run only if Harbor is installed in this environment.
+harbor view /tmp/meta-agent-jobs
+```
+
+The batch exporter uses the current Codex sessions directory by default and accepts the same `--codex-sessions` override. It refuses to run while a foreground supervisor owns the run lock; use automatic export during supervision, or batch-export after the runner stops. Existing completed passes are identified from their request outcome or durable completion event; an available response alone does not establish completion.
+
+Viewer bundles target Harbor 0.24.0 and contain a disabled verifier, explicit import-only metadata, and no inferred rewards. Use a separate output directory; re-export preserves unrelated files and refuses to overwrite edited generated files. The bundle is for inspection and is not a runnable Harbor job. Harbor installation is needed for its viewer or optional validation, not ATIF generation. To validate one exported trajectory with an installed Harbor package, use `python -m harbor.utils.trajectory_validator /path/to/trajectory.json`.
+
+Scheduling, feedback boundaries, recovery and the explicit project gate remain owned by the supervisor; this export layer does not replace it with a Harbor custom agent.

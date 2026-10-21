@@ -25,7 +25,8 @@ SUPERVISE=(python3 "$SKILL_DIR/scripts/supervise.py"
   --trajectories trajectories
   --contract reports/meta_agent_contract.json
   --every-steps 20 --every-seconds 600
-  --max-calls 30 --stop-step 200 --idle-timeout 1800)
+  --max-calls 30 --stop-step 200 --idle-timeout 1800
+  --export-atif)
 
 # Before launching training: one discovery pass.
 "${SUPERVISE[@]}" --once
@@ -51,10 +52,28 @@ The values above are examples. Choose either trigger or both; if both are config
 | `--max-calls N` | Total persisted agent-call budget, including discovery, failed calls, reconciliation, and final review. Required for continuous mode. |
 | `--stop-step N` | Request a read-only final review when this step is observed; training is left running. |
 | `--idle-timeout S` | Hand off supervision when the bound log stops advancing for this long. |
+| `--export-atif` | Export the meta-agent's own visible messages, tool calls and decisions as an ATIF trajectory after each pass. |
 
 Default `--mode propose` writes review records without changing training/configuration. For execution, configure a project gate with `--mode apply`, `--executor-command`, and matching `contract.allowed_operations`; follow the [gate interface](.agent/skills/meta-agent/references/supervision.md#optional-execution-through-a-project-gate). Discovery remains read-only. After an uncertain execution, resumption reconciles actual state without automatically retrying the operation.
 
 Reviews default to `reports/change_log.md`; maps, experience, and supervision state stay under the training checkout's `reports/`. Each `reports/supervision/<RUN>/requests/<ID>/` retains the prompt, response, stdout/stderr, and any operation receipt. See the [full runner instructions](.agent/skills/meta-agent/references/supervision.md) for log/run aliases, timeouts, explicit settings changes, and recovery.
+
+## Export meta-agent trajectories
+
+The startup example enables `--export-atif`. Each agent pass produces `requests/<ID>/trajectory.json` and an `export.json` coverage manifest, with a run-level `trajectories.json` index. These record the **meta-agent**; `--trajectories` still points to the **training agent's** trajectory input. The exporter uses the matching Codex session when available and labels incomplete coverage when only stdout or a custom backend's prompt/response is available. It does not change the read-only agent and explicit execution-gate boundary.
+
+To export existing requests without calling an agent, or prepare a Harbor viewer job:
+
+```bash
+python3 "$SKILL_DIR/scripts/export_run.py" \
+  --run-dir "$TRAIN_ROOT/reports/supervision/$RUN" \
+  --harbor-out "/tmp/meta-agent-jobs/$RUN"
+
+# Optional: requires Harbor to be installed in this environment.
+harbor view /tmp/meta-agent-jobs
+```
+
+ATIF export itself uses only Python's standard library. Add `--codex-sessions /path/to/sessions` to either command when sessions are stored outside the current Codex home. See [export details and coverage limits](.agent/skills/meta-agent/references/supervision.md#export-meta-agent-trajectories) for the archive layout and Harbor integration.
 
 The [intervention discovery guide](.agent/skills/meta-agent/references/intervention-discovery.md) explains candidate selection. The optional [EAU / verl adapter](.agent/skills/meta-agent/references/eau-adapter.md) documents project-specific helpers and layouts; its watchers check records without invoking the reasoning agent.
 
