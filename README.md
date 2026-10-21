@@ -1,5 +1,7 @@
 # Meta-Agent Skill
 
+![Meta-Agent framework](assets/framework.png)
+
 A general skill for setting up, launching, supervising, and improving long-running model training experiments. It combines the project's training recipe, prior experiment experience, current evidence, and applicable method references to discover mechanism hypotheses, maps them to actual code and runtime controls, then tests worthwhile changes and verifies uptake and outcomes.
 
 The workflow applies across pretraining, self-supervised learning, supervised learning and SFT, reinforcement learning, and agent training. Candidate components depend on the project: objectives and loss functions, data sampling and preprocessing, optimizer schedules, batching, resource use and throughput, and training measurements. Reward, rollout, environment, and user-simulator changes are additional candidates for projects that have those components. Each scheduled review can apply a justified modification, collect evidence, observe a pending window, or plan a restart-required intervention. The experiment contract defines feedback boundaries; EAU reproduction uses training-side feedback only.
