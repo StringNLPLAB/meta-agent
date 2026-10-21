@@ -87,4 +87,4 @@ If you use this skill in your research, please cite:
 
 ## License
 
-Original project contributions are licensed under the [MIT License](LICENSE.txt). Existing third-party notices and licensing terms are retained in [NOTICE](NOTICE) and [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt). The bundled reference paper retains its own copyright and distribution terms.
+Original project contributions are licensed under the [MIT License](LICENSE.txt). Existing third-party notices and licensing terms are retained in [NOTICE](NOTICE). The bundled reference paper retains its own copyright and distribution terms.
