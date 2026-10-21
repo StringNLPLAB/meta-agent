@@ -2,7 +2,7 @@
 
 This is the repo that contains the meta-agent skill design in the "EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents".
 
-![Meta-Agent framework](assets/framework.png)
+![Meta-Agent framework](assets/framework.svg)
 
 A general skill for setting up, launching, supervising, and improving long-running model training experiments. It combines the project's training recipe, prior experiment experience, current evidence, and applicable method references to discover mechanism hypotheses, maps them to actual code and runtime controls, then tests worthwhile changes and verifies uptake and outcomes.
 
