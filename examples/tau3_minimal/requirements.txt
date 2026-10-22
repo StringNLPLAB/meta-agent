@@ -1,0 +1,7 @@
+# Install into the selected training interpreter; prepare/runtime need no torch.
+torch>=2.2,<3
+transformers>=4.45,<5
+# Supports PYTHON_DOTENV_DISABLED before importing the external benchmark.
+python-dotenv>=1.2.2,<2
+# Install the external tau2-bench 1.0.1 checkout with its [gym] extra separately.
+# Native benchmark declares Python >=3.12,<3.14 and its own dependency bounds.

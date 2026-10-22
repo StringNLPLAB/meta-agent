@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "upstream": "https://github.com/sierra-research/tau2-bench",
+  "package": "tau2",
+  "package_version": "1.0.1",
+  "source_identity": "Inspected external source snapshot; no verified upstream commit identity available.",
+  "scope": "New integration for native text/half-duplex train split; no source code or data copied.",
+  "reference_sha256": {
+    "pyproject.toml": "23d59670b4ad7bbc0f57420fd9643a8d9188c24abe4f29c9c965544d8cc4cb8d",
+    "src/tau2/gym/gym_agent.py": "109a7d5a84ecae3c84c56bc7a20fd4b9be8e87727a6cfd0e3bd3e6c011f4dcf7",
+    "src/tau2/registry.py": "d170c1f4b7323a75e26b2ead6754ed423b17a3deb91fe2c89e7e8ec78c6bf12a",
+    "src/tau2/user/user_simulator.py": "bfe1defe73bce25450b2be697c249d6cec2f3ba25a70e32e2452ba75a53a630c",
+    "src/tau2/evaluator/evaluator.py": "204d95a82812402f2fee989250392d3c66de702a8bcc20258c7e2a8153a1ea8d"
+  },
+  "handover_references": [
+    "examples/tau2/train.sh",
+    "examples/tau2/config/tau2_trainer.yaml",
+    "gyms/Tau2Gym/tau2gym/env/tau2_env.py",
+    "verl/tools/tau2_tool_manager.py",
+    "verl/tools/tau2_tool_wrapper.py"
+  ],
+  "adaptations": [
+    "Independent local Hugging Face REINFORCE trainer rather than copied distributed verl stack.",
+    "Official native UserSimulator and Gym orchestration, with strict train split and explicit ENV/ACTION reward proxy.",
+    "Runtime source fingerprints are computed again for the actual configured checkout."
+  ]
+}

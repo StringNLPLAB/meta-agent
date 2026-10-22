@@ -48,8 +48,8 @@ within this scope, then verify their uptake and effects.
 The coding agent handles the setup and execution:
 
 1. Reuse the setup summary and applicable experience; inspect the training recipe, code, and available resources; resolve the experiment contract, run identity, paths, budgets, and review cadence. Complete setup first if its summary is missing or the paper version changed.
-2. Run read-only discovery before training and save the candidate component map.
-3. Launch the existing training recipe, then arrange continuing supervision through an actual host-managed process or scheduler with ATIF export enabled.
+2. Prepare the launch configuration and have the runtime complete read-only discovery, saving the candidate component map before training starts.
+3. After successful discovery, the runtime starts the training recipe and continuing supervision under one process owner, with ATIF export enabled, and manages both processes through completion.
 4. At each configured time or step boundary, review logs and available training evidence, such as sampled examples, predictions, per-batch diagnostics, or interaction trajectories; reassess candidate modifications, register predictions, apply justified changes within the authorized scope through a verified project gate, and verify runtime uptake and subsequent outcomes. Track training progress, the supervisor owner and next wake-up throughout.
 5. Save completion or handoff records, remaining uncertainties, and the selected checkpoint under the declared protocol.
 
@@ -59,7 +59,15 @@ You do not need to write JSON, supply CLI flags, start training manually, or kee
 
 The project gate is a programmatic validation and execution interface, not a prompt for manual confirmation at every review. The agent derives its allowed operations from your existing authorization and can implement a compatible gate within that scope. It verifies which changes can reach running workers; code changes that require a restart follow the experiment's authorized restart plan.
 
-The host needs Python 3, the selected agent CLI and model access, the training environment, and a supported way to own continuing jobs. The agent checks each project's launch interface, progress logs, diagnostic sources, and available runtime controls; the skill does not supply a tested integration for every training framework. It must establish and verify the job owner before claiming unattended supervision. The bundled runner remains a foreground review/gate process; the outer coding agent launches training and arranges its lifetime. Skill text alone cannot keep a process alive after its host session ends. See the [implementation reference](.agent/skills/meta-agent/references/supervision.md) for the CLI, contract, execution gate, and recovery details.
+The host needs Python 3, the selected agent CLI and model access, and the training environment. The agent checks each project's launch interface, progress logs, diagnostic sources, and available runtime controls; the skill does not supply a tested integration for every training framework. See the [runtime reference](runtime/README.md) for process ownership and the [supervision reference](.agent/skills/meta-agent/references/supervision.md) for review decisions, contracts, and the execution gate.
+
+## Experiment runtime
+
+[runtime/run_experiment.py](runtime/run_experiment.py) supplies the process that keeps the workflow running. The outer coding agent generates its launch configuration from your request and invokes it. It completes read-only discovery, launches the trainer, polls progress through the existing supervisor, calls Codex or OpenCode at the configured boundaries, and records a final review when training exits. A run is complete only when the trainer succeeds and supervision completes; budget exhaustion, training failure, and handoff remain distinct outcomes.
+
+The runtime supports foreground execution and `--detach`, which starts an independent POSIX session and verifies the live owner before returning. It records process identities, logs, exit receipts, and state under `reports/runtime/<RUN>/`. Detachment survives the launching shell ending; host shutdown or a service manager killing the whole session still requires a host job service. The runtime does not install a service or automatically restart experiments.
+
+The [minimal τ³-bench example](examples/tau3_minimal/README.md) connects an independent training loop to this runtime. It uses the benchmark's official training split, a local Hugging Face policy, and the native user simulator, while keeping the meta-agent model separately configurable. It writes interaction trajectories and performs real optimizer updates. Its explicit CPU smoke mode exercises parameter updates and supervision using a synthetic task; smoke results are not τ³-bench scores. Benchmark code/data and model weights remain external dependencies.
 
 ## Local models with OpenCode
 
@@ -87,7 +95,11 @@ The [intervention discovery guide](.agent/skills/meta-agent/references/intervent
 
 Run offline helper regression checks with `python3 -m unittest discover -s .agent/skills/meta-agent/scripts/tests -v`. Fixtures use temporary training roots and do not connect to training processes.
 
-Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch contains the skill and supervision helpers; training frameworks, weights, and run outputs remain outside the package.
+Run runtime and minimal-training checks with `python3 -m unittest discover -s tests -v`. These launch temporary owned subprocesses; training smoke checks require PyTorch. The optional OpenCode integration uses the real 1.19.3 CLI with a localhost mock model API when `META_AGENT_OPENCODE_BIN` is set. No test downloads model weights or reports synthetic results as benchmark performance.
+
+With the benchmark's dependencies installed, set `TAU3_BENCHMARK_ROOT` to an external 1.0.1 checkout to include native Gym/UserSimulator/evaluator integration checks. These use official train tasks and a localhost mock user service; they verify API compatibility rather than real model performance.
+
+Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. The repository contains the skill, experiment runtime, and a minimal training example; full training frameworks, weights, benchmark data, and run outputs remain outside the package.
 
 ## Citation
 
