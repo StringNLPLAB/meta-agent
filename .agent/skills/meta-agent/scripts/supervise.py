@@ -15,6 +15,7 @@ import time
 import uuid
 
 from eau_paths import canonical_run, first_review_step, run_for_log
+from agent_backends import backend_from_args
 
 SKILL = Path(__file__).resolve().parents[1]
 COLUMNS = ("decision", "tier", "knob", "change", "evidence", "prediction", "verification")
@@ -187,6 +188,7 @@ class Supervisor:
         self.contract = read_json(self.path(args.contract))
         self.validate_contract()
         self.agent_command = argv_json(args.agent_command) if args.agent_command else None
+        self.backend = backend_from_args(args)
         self.executor = argv_json(args.executor_command) if args.executor_command else None
         if args.codex_sessions and not args.export_atif:
             raise ValueError("--codex-sessions requires --export-atif")
@@ -230,6 +232,11 @@ class Supervisor:
             "skill_sha": hashlib.sha256(b"".join((SKILL / p).read_bytes() for p in (
                 "SKILL.md", "references/intervention-discovery.md", "references/eau-adapter.md"))).hexdigest(),
         }
+        if self.backend.name == "opencode" or args.agent_model:
+            self.binding["backend"] = {"name": self.backend.name, "settings": self.backend.settings}
+        if self.backend.name == "opencode":
+            self.binding["backend"]["adapter_sha256"] = hashlib.sha256(
+                Path(__file__).with_name("agent_backends.py").read_bytes()).hexdigest()
         self.state = None
 
     def path(self, value, writable=False):
@@ -586,7 +593,10 @@ handoff; it hands off ONLY this supervisor and does not stop training.
         request = {"id": uuid.uuid4().hex, "phase": phase, "step": step, "started_at": self.clock(),
                    "log_offset": self.state["cursor"].get("offset", 0), "stage": "prepared",
                    "agent_timeout_seconds": self.args.agent_timeout, "run": self.run,
-                   "backend": "custom" if self.agent_command else "codex", "skill_sha": self.binding["skill_sha"]}
+                   "backend": self.backend.name, "skill_sha": self.binding["skill_sha"],
+                   "training_root": str(self.root), "skill_root": str(SKILL),
+                   "allowed_read_paths": [str(p) for p in (self.log, self.trajectories, self.table,
+                                                          self.map, self.experience, self.directory)]}
         directory = self.directory / "requests" / request["id"]
         directory.mkdir(parents=True)
         request["directory"] = str(directory)
@@ -597,9 +607,7 @@ handoff; it hands off ONLY this supervisor and does not stop training.
         self.state.update(active_request=request, calls=self.state["calls"] + 1, status="reviewing")
         self.save()
         self.event("agent_started", request_id=request["id"], phase=phase, step=step)
-        command = self.agent_command or ["codex", "exec", "--sandbox", "read-only", "--skip-git-repo-check",
-                    "--output-schema", str(directory / "response.schema.json"),
-                    "--output-last-message", str(directory / "response.json"), "--json", "-"]
+        command = self.backend.command(directory)
         code = self.process(command, directory, prompt, "agent", self.args.agent_timeout)
         if code:
             raise ValueError(f"Agent exited {code}; inspect {directory / 'agent.stderr'}")
@@ -727,6 +735,13 @@ def parser():
     result.add_argument("--agent-timeout", type=positive, default=600)
     result.add_argument("--executor-timeout", type=positive, default=120)
     result.add_argument("--mode", choices=("propose", "apply"), default="propose")
+    result.add_argument("--backend", choices=("codex", "opencode"), default="codex")
+    result.add_argument("--agent-model", help="Codex model, or the exact model ID served by the local OpenCode endpoint")
+    result.add_argument("--opencode-base-url", help="Explicit OpenAI-compatible local API base URL, including /v1")
+    result.add_argument("--opencode-api-key-env", help="Optional environment variable containing the local endpoint credential")
+    result.add_argument("--opencode-context", type=int, default=32768, help="Local model context limit (default 32768)")
+    result.add_argument("--opencode-output", type=int, default=8192, help="Local model output limit (default 8192)")
+    result.add_argument("--opencode-command", default='["opencode"]', help="OpenCode 1.19.3 CLI as a JSON argv array")
     result.add_argument("--agent-command", help="Optional JSON argv; prompt on stdin, JSON response on stdout or META_AGENT_RESPONSE")
     result.add_argument("--export-atif", action="store_true", help="Export meta-agent interactions to ATIF after each attempted pass")
     result.add_argument("--codex-sessions", help="Native Codex sessions source for exact thread matching; requires --export-atif")

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Conservatively export one supervisor request to ATIF, without Harbor dependencies.
 
-Only a session whose session_meta ID matches this invocation's thread.started ID
-may be collected. This is an interchange export, not a Harbor trial/reward runner.
+Only a Codex session whose session_meta ID matches this invocation's thread.started
+ID may be collected. OpenCode is converted solely from this request's stdout.
+This is an interchange export, not a Harbor trial/reward runner.
 """
 from __future__ import annotations
 
@@ -10,12 +11,13 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import tempfile
 
 VERSION = "1"
-ARTIFACTS = ("request.json", "prompt.txt", "agent.stdout", "agent.stderr", "response.json",
+ARTIFACTS = ("request.json", "prompt.txt", "agent.stdout", "agent.stderr", "agent.backend.json", "response.json",
              "operation.json", "receipt.json", "executor.stdout", "executor.stderr")
 
 
@@ -379,6 +381,188 @@ def _convert_stdout(events, steps, warnings):
     return usage
 
 
+
+def _opencode_timestamp(value):
+    # OpenCode run --format json emits Date.now(), in milliseconds. Keep the
+    # existing seconds-based supervisor/Codex timestamp handling unchanged.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return _timestamp(value / 1000)
+    return None
+
+
+def _opencode_usage(part, warnings):
+    """Keep reported native usage without inventing unknown token semantics/cost."""
+    usage = {}
+    tokens = part.get("tokens")
+    if isinstance(tokens, dict):
+        for key in ("input", "output", "reasoning", "total"):
+            value = tokens.get(key)
+            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                usage[key] = value
+            elif key in tokens:
+                warnings.append(f"OpenCode tokens.{key}: unsupported count retained as raw")
+        cache = tokens.get("cache")
+        if isinstance(cache, dict):
+            for key in ("read", "write"):
+                value = cache.get(key)
+                if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                    usage["cache_" + key] = value
+                elif key in cache:
+                    warnings.append(f"OpenCode tokens.cache.{key}: unsupported count retained as raw")
+    elif tokens is not None:
+        warnings.append("OpenCode tokens: unsupported usage retained as raw")
+    cost = part.get("cost")
+    if isinstance(cost, (int, float)) and not isinstance(cost, bool) and math.isfinite(cost) and cost >= 0:
+        # OpenCode computes this from configured model prices; it is not proof
+        # of actual billing or the compute cost of a locally deployed model.
+        usage["reported_cost_usd"] = cost
+    elif cost is not None:
+        warnings.append("OpenCode cost: unsupported value retained as raw")
+    return usage
+
+
+
+def _opencode_token_metrics(usage, version):
+    # Official v1.19.3 Session.getUsage removes cache tokens from input and
+    # reasoning tokens from output. ATIF includes both in its standard totals.
+    # Retain native categories only when version/required counters are unknown.
+    if version != "1.19.3":
+        return {}
+    metrics = {}
+    if all(key in usage for key in ("input", "cache_read", "cache_write")):
+        metrics["prompt_tokens"] = usage["input"] + usage["cache_read"] + usage["cache_write"]
+    if all(key in usage for key in ("output", "reasoning")):
+        metrics["completion_tokens"] = usage["output"] + usage["reasoning"]
+    if "cache_read" in usage:
+        metrics["cached_tokens"] = usage["cache_read"]
+    return metrics
+
+def _convert_opencode(events, steps, warnings, metadata):
+    """Convert v1 run NDJSON, never searching OpenCode's global session store.
+
+    The official CLI emits complete text/tool parts, not token deltas. Part IDs
+    therefore identify snapshots; repeated step_finish parts must not double
+    count usage. CLI stdout omits subagent internals and optional reasoning.
+    """
+    metadata = metadata or {}
+    version = metadata.get("version")
+    version = version if isinstance(version, str) and version else "unknown"
+    model = metadata.get("model")
+    model = model if isinstance(model, str) and model else None
+    identities, envelope_ids = set(), set()
+    for event in events:
+        identity = event.get("sessionID")
+        if isinstance(identity, str) and identity:
+            identities.add(identity)
+            envelope_ids.add(identity)
+        part = event.get("part")
+        if isinstance(part, dict) and isinstance(part.get("sessionID"), str) and part["sessionID"]:
+            identities.add(part["sessionID"])
+    claimed = metadata.get("session_id")
+    if isinstance(claimed, str) and claimed:
+        identities.add(claimed)
+    if len(identities) != 1 or len(envelope_ids) != 1:
+        warnings.append("OpenCode mixed/missing session IDs; stdout retained as raw without merging sessions")
+        return model, version, None, None
+    session_id = next(iter(identities))
+    calls, parts, usage_parts = {}, {}, {}
+    last_finish = None
+    known = {"text": "text", "reasoning": "reasoning", "tool_use": "tool",
+             "step_start": "step-start", "step_finish": "step-finish"}
+    for event in events:
+        kind = event.get("type")
+        if event.get("sessionID") != session_id:
+            warnings.append("OpenCode event missing matching sessionID; retained as raw")
+            continue
+        timestamp = _opencode_timestamp(event.get("timestamp"))
+        if timestamp is None:
+            warnings.append("OpenCode event timestamp unavailable; retained without invented timestamp")
+        if kind == "error":
+            warnings.append("OpenCode stdout reports error; trajectory may be partial")
+            _step(steps, "system", json.dumps(_strip_encrypted(event.get("error")), ensure_ascii=False),
+                  timestamp=timestamp, extra={"stdout_type": "error", "backend_error": True})
+            continue
+        if not isinstance(kind, str) or kind not in known:
+            warnings.append(f"OpenCode event type {kind!r} unsupported; retained in raw artifact")
+            continue
+        part = event.get("part")
+        if not isinstance(part, dict) or part.get("type") != known[kind]:
+            warnings.append(f"OpenCode {kind}: missing/unsupported part retained as raw")
+            continue
+        identifier = part.get("id")
+        if not isinstance(identifier, str) or not identifier:
+            warnings.append(f"OpenCode {kind}: missing part id retained as raw")
+            continue
+        if identifier in parts and parts[identifier]["extra"]["stdout_type"] != kind:
+            warnings.append("OpenCode conflicting part types unsupported; retained as raw")
+            continue
+        extra = {"stdout_type": kind, "part_id": identifier, "message_id": part.get("messageID")}
+        if kind in ("text", "reasoning"):
+            text = part.get("text")
+            if not isinstance(text, str):
+                warnings.append(f"OpenCode {kind}: unsupported text retained as raw")
+                continue
+            step = parts.get(identifier)
+            if step is None:
+                step = parts[identifier] = _step(steps, "agent", timestamp=timestamp, extra=extra)
+            if kind == "reasoning":
+                step["reasoning_content"] = text
+                step["extra"]["visibility"] = "visible_backend_text"
+            else:
+                step["message"] = text
+        elif kind == "tool_use":
+            state = part.get("state")
+            name, call_id = part.get("tool"), part.get("callID")
+            if not isinstance(state, dict) or not isinstance(name, str) or not name or not isinstance(call_id, str) or not call_id:
+                warnings.append("OpenCode tool_use: missing/unsupported tool state or callID retained as raw")
+                continue
+            if call_id in calls and calls[call_id]["extra"]["part_id"] != identifier:
+                warnings.append("OpenCode conflicting callID across parts unsupported; retained as raw")
+                continue
+            step = _call(steps, calls, call_id, name, state.get("input"), timestamp, extra)
+            parts[identifier] = step
+            step["extra"]["status"] = state.get("status")
+            if not isinstance(state.get("input"), dict):
+                warnings.append("OpenCode tool input unavailable/unsupported; captured fields retained as raw")
+            if state.get("status") == "completed" and isinstance(state.get("output"), str):
+                _output(step, call_id, state["output"], {"status": "completed"})
+            elif state.get("status") == "error" and isinstance(state.get("error"), str):
+                _output(step, call_id, state["error"], {"status": "error"})
+                warnings.append("OpenCode tool reports error; trajectory may be partial")
+            else:
+                warnings.append("OpenCode tool result unavailable/unsupported; retained as raw")
+            if state.get("attachments"):
+                warnings.append("OpenCode tool attachments unsupported; retained in raw artifact")
+        else:
+            step = parts.get(identifier)
+            if step is None:
+                step = parts[identifier] = _step(steps, "agent", timestamp=timestamp, extra=extra)
+            if kind == "step_finish":
+                last_finish = part.get("reason")
+                step["extra"]["finish_reason"] = last_finish
+                usage = _opencode_usage(part, warnings)
+                usage_parts[identifier] = usage
+                if usage:
+                    step["metrics"] = _opencode_token_metrics(usage, version)
+                    step["metrics"]["extra"] = {"opencode_usage": usage,
+                                                "basis": "reported step_finish; cost uses configured prices"}
+    if last_finish != "stop":
+        warnings.append("OpenCode terminal step_finish reason=stop unavailable; stdout may be truncated")
+    warnings.append("OpenCode stdout covers emitted terminal tool snapshots; in-progress tools, un-emitted reasoning and subagent internals unavailable")
+    # Native counts/cost remain separately attributable. Publish standard token
+    # totals only when every observed finish has all required measured counters.
+    totals = {"extra": {"opencode_usage": {
+        key: sum(item[key] for item in usage_parts.values() if key in item)
+        for key in sorted({key for item in usage_parts.values() for key in item})},
+        "observed_usage_steps": len(usage_parts),
+        "basis": "observed unique step_finish parts; reported tokens, configured-price cost"}}
+    converted = [_opencode_token_metrics(item, version) for item in usage_parts.values()]
+    for key in ("prompt_tokens", "completion_tokens", "cached_tokens"):
+        if converted and all(key in item for item in converted):
+            totals["total_" + key] = sum(item[key] for item in converted)
+    return model, version, totals if any(usage_parts.values()) else None, session_id
+
+
 def _controller(root, steps, warnings, request):
     request_id = request["id"]
     operation = _json_object(_read(root, "operation.json"), "operation.json", warnings)
@@ -438,7 +622,8 @@ def export_request(request_dir, *, run, sessions_dir=None, status=None):
     thread_id = next(iter(thread_ids)) if len(thread_ids) == 1 else None
     if len(thread_ids) > 1:
         warnings.append("multiple stdout thread IDs; no shared native session was collected")
-    native, source = _native(root, thread_id, sessions_dir, warnings)
+    opencode = request.get("backend") == "opencode"
+    native, source = (None, None) if opencode else _native(root, thread_id, sessions_dir, warnings)
     steps = []
     prompt = _read(root, "prompt.txt")
     if prompt is not None:
@@ -447,7 +632,16 @@ def export_request(request_dir, *, run, sessions_dir=None, status=None):
     else:
         warnings.append("prompt.txt missing; request context unavailable")
     model, version, usage = None, "unknown", None
-    if native is not None:
+    if opencode:
+        thread_id = None
+        metadata = _json_object(_read(root, "agent.backend.json"), "agent.backend.json", warnings)
+        model, version, usage, session_id = _convert_opencode(stdout, steps, warnings, metadata)
+        capture = "opencode_stdout"
+        if session_id:
+            thread_id = session_id
+        source = {"path": "agent.stdout", "native_session_id": session_id,
+                  "basis": "only this invocation's NDJSON; no global OpenCode storage collection"}
+    elif native is not None:
         model, version = _convert_native(native, steps, warnings)
         capture = "native"
         # stdout is still authoritative for usage emitted by this exact invocation.
@@ -483,7 +677,7 @@ def export_request(request_dir, *, run, sessions_dir=None, status=None):
     conversion_gap = any(any(term in warning for term in ("unsupported", "unavailable", "incomplete", "no matching", "missing"))
                          for warning in warnings)
     coverage = {"basis": "visible recorded events only; no inferred private reasoning or LLM call counts",
-                "internal_tools": "native_response_items" if native is not None else "stdout_events_only" if capture == "stdout" else "unavailable",
+                "internal_tools": "native_response_items" if native is not None else "opencode_stdout_events" if opencode and thread_id else "stdout_events_only" if capture == "stdout" else "unavailable",
                 "partial": not complete or native is None or conversion_gap,
                 "lifecycle_complete": complete,
                 "multimodal": "unsupported content retained in raw artifacts, not represented as text"}
@@ -504,7 +698,9 @@ def export_request(request_dir, *, run, sessions_dir=None, status=None):
     previous = request.get("previous_request")
     if isinstance(previous, dict) and isinstance(previous.get("id"), str):
         trajectory["extra"]["previous_request_id"] = previous["id"]
-    if usage:
+    if opencode and usage:
+        trajectory["final_metrics"] = usage
+    elif usage:
         mapping = {"input_tokens": "total_prompt_tokens", "output_tokens": "total_completion_tokens",
                    "cached_input_tokens": "total_cached_tokens"}
         metrics = {target: usage[key] for key, target in mapping.items()
@@ -514,7 +710,7 @@ def export_request(request_dir, *, run, sessions_dir=None, status=None):
     _write(root, "trajectory.json", _json_bytes(trajectory))
     hashes = {name: _sha(data) for name in (*ARTIFACTS, "trajectory.json")
               if (data := _read(root, name)) is not None}
-    if source:
+    if source and source.get("archived_sha256"):
         hashes[source["path"]] = source["archived_sha256"]
         metadata = _read(root, "native/capture.json")
         if metadata is not None:

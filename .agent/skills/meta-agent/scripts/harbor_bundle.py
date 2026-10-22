@@ -20,7 +20,7 @@ SOURCE = "imported-supervision-trace"
 NAMESPACE = uuid.UUID("f9e046bd-3a05-4a60-8f75-21c56ee8263b")
 ARTIFACTS = (
     "request.json", "export.json", "response.json", "prompt.txt",
-    "agent.stdout", "agent.stderr", "operation.json", "receipt.json",
+    "agent.stdout", "agent.stderr", "agent.backend.json", "operation.json", "receipt.json",
     "executor.stdout", "executor.stderr", "native/capture.json",
 )
 NOTICE = (
