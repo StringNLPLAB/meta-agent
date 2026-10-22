@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=77,<81", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "verl"
+version = "0.4.0.dev0"
+description = "InfoPO customized verl training engine vendored with Meta-Agent"
+requires-python = ">=3.10,<3.14"
+license = "Apache-2.0 AND BSD-3-Clause"
+license-files = ["NOTICE"]
+dependencies = [
+  "accelerate>=1.0,<2",
+  "codetiming>=1.4,<2",
+  "datasets>=3,<4",
+  "dill>=0.3.8,<0.4",
+  "filelock>=3.16",
+  "hydra-core==1.3.2",
+  "numpy>=1.26,<2",
+  "omegaconf>=2.3,<2.4",
+  "packaging>=20",
+  "pandas>=2.2,<3",
+  "peft>=0.15,<0.16",
+  "pillow>=10",
+  "psutil>=6",
+  "pyarrow>=19,<20",
+  "pybind11>=2.13",
+  "pydantic>=2.10,<3",
+  "pylatexenc>=2.10",
+  "ray[default]>=2.41,<2.50",
+  "safetensors>=0.5",
+  "setuptools>=77,<81",
+  "sympy>=1.13",
+  "tensordict==0.6.2",
+  "torch>=2.5",
+  "torchdata==0.11.0",
+  "tqdm>=4.66",
+  "transformers>=4.51,<4.53",
+  "wandb>=0.19,<1",
+]
+
+[project.optional-dependencies]
+sglang = [
+  "sglang[srt,openai]==0.4.7",
+  "torch==2.7.1",
+  "torchaudio==2.7.1",
+  "torchvision==0.22.1",
+  "transformers==4.52.3",
+  "torch-memory-saver>=0.0.5,<0.1",
+  "flash-attn==2.7.4.post1",
+  "aiohttp>=3.11",
+  "cachetools>=5",
+  "fastapi>=0.115",
+  "openai>=2.8,<3",
+  "uvicorn>=0.34",
+]
+# vLLM is an alternate installation, not an addition to the SGLang profile:
+# vLLM 0.9.1 pins torch 2.7.0 while SGLang 0.4.7 pins torch 2.7.1.
+vllm = ["vllm==0.9.1"]
+gpu = ["liger-kernel>=0.5,<0.6"]
+test = ["pytest>=8,<9"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["verl", "verl.*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+verl = ["version/*", "**/*.yaml", "**/*.json", "**/*.md"]

@@ -69,6 +69,25 @@ The runtime supports foreground execution and `--detach`, which starts an indepe
 
 The [minimal τ³-bench example](examples/tau3_minimal/README.md) connects an independent training loop to this runtime. It uses the benchmark's official training split, a local Hugging Face policy, and the native user simulator, while keeping the meta-agent model separately configurable. It writes interaction trajectories and performs real optimizer updates. Its explicit CPU smoke mode exercises parameter updates and supervision using a synthetic task; smoke results are not τ³-bench scores. Benchmark code/data and model weights remain external dependencies.
 
+## InfoPO / verl training
+
+The repository also includes the customized [verl training engine](verl/) from InfoPO, with its Info-GRPO objective, Ray/FSDP workers, SGLang rollout code, reward managers, and trainer configurations. The [τ³ verl recipe](examples/tau3_verl/README.md) supplies dataset preparation, native benchmark environment integration, a bounded training launcher, and an optional launch configuration for the experiment runtime.
+
+Ask the coding agent to use it, for example:
+
+```text
+Use the included examples/tau3_verl recipe with the meta-agent skill.
+My benchmark checkout is /path/to/tau2-bench and local policy weights are
+at /path/to/policy. Use the user model openai/local-user served at
+http://localhost:31000/v1 and OpenCode with flint at http://localhost:30000/v1.
+Prepare an isolated training environment, run 10 optimizer steps on one GPU,
+review every two steps, and record training samples and meta-agent trajectories.
+```
+
+The agent resolves settings and executes installation, data preparation, discovery and training within the requested budget. The policy weights, user-model service, and meta-agent service must be available or included in an explicitly resolved deployment plan. Dataset preparation uses only official training tasks and writes a separate development partition from those tasks; the default recipe disables benchmark validation and uses an explicit ACTION/ENV training reward proxy.
+
+Dependency files and the installation helper are under [requirements/](requirements/README.md). The SGLang profile selects the versions required by this fork, including PyTorch 2.7.1, SGLang 0.4.7, and FlashAttention 2. Install it in a separate CUDA training environment. The agent CLI and standard-library supervision runtime can run in their own environment. See the recipe for generated preparation and launch commands; model weights and benchmark data are not bundled.
+
 ## Local models with OpenCode
 
 To use a local model for discovery and periodic reviews, add a natural-language instruction such as:
@@ -99,7 +118,7 @@ Run runtime and minimal-training checks with `python3 -m unittest discover -s te
 
 With the benchmark's dependencies installed, set `TAU3_BENCHMARK_ROOT` to an external 1.0.1 checkout to include native Gym/UserSimulator/evaluator integration checks. These use official train tasks and a localhost mock user service; they verify API compatibility rather than real model performance.
 
-Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. The repository contains the skill, experiment runtime, and a minimal training example; full training frameworks, weights, benchmark data, and run outputs remain outside the package.
+Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. The repository contains the skill, experiment runtime, customized InfoPO/verl training engine, and τ³ training examples. Model weights, benchmark code/data, and run outputs remain external.
 
 ## Citation
 
@@ -119,4 +138,4 @@ If you use this skill in your research, please cite:
 
 ## License
 
-Original project contributions are licensed under the [MIT License](LICENSE.txt). Existing third-party notices and licensing terms are retained in [NOTICE](NOTICE). The bundled reference paper retains its own copyright and distribution terms.
+Original project contributions are licensed under the [MIT License](LICENSE.txt). The vendored verl engine retains its Apache 2.0 and applicable per-file third-party terms, reproduced in [NOTICE](NOTICE). The bundled reference paper retains its own copyright and distribution terms.

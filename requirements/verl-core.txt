@@ -1,0 +1,2 @@
+# General trainer dependencies only; no GPU rollout server.
+-e .

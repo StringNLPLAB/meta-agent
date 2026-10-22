@@ -1,0 +1,767 @@
+# Python 3.12 / Linux x86_64 combined trainer + tau2 1.0.1 [gym] metadata lock.
+# Generated with uv 0.11.7; CUDA toolkit/build compatibility still requires target-host validation.
+# Resolve input: pyproject core + sglang extra + benchmark dependencies and gym extra,
+# with requirements/constraints-sglang.txt and python-dotenv>=1.2.2,<2.
+# Use this as an additional constraints file when installing this profile.
+accelerate==1.7.0
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   peft
+addict==2.4.0
+    # via -r joint trainer/benchmark input
+aiohappyeyeballs==2.7.1
+    # via aiohttp
+aiohttp==3.14.5
+    # via
+    #   -r joint trainer/benchmark input
+    #   aiohttp-cors
+    #   fsspec
+    #   litellm
+    #   ray
+    #   sglang
+aiohttp-cors==0.8.1
+    # via ray
+aiosignal==1.4.0
+    # via aiohttp
+airportsdata==20260905
+    # via outlines
+annotated-doc==0.0.5
+    # via
+    #   fastapi
+    #   typer
+annotated-types==0.8.0
+    # via pydantic
+antlr4-python3-runtime==4.9.3
+    # via
+    #   hydra-core
+    #   omegaconf
+anyio==4.15.1
+    # via
+    #   cwevals
+    #   httpx
+    #   openai
+    #   starlette
+asttokens==3.0.2
+    # via stack-data
+attrs==26.1.0
+    # via
+    #   aiohttp
+    #   jsonschema
+    #   referencing
+blobfile==3.0.0
+    # via sglang
+cachebox==5.2.3
+    # via deepdiff
+cachetools==7.2.4
+    # via -r joint trainer/benchmark input
+certifi==2026.10.19
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+cffi==2.1.1
+    # via
+    #   cryptography
+    #   soundfile
+charset-normalizer==3.5.2
+    # via requests
+click==8.5.0
+    # via
+    #   litellm
+    #   ray
+    #   uvicorn
+    #   wandb
+cloudpickle==3.1.2
+    # via
+    #   gymnasium
+    #   outlines
+    #   tensordict
+codetiming==1.4.0
+    # via -r joint trainer/benchmark input
+colorful==0.5.8
+    # via ray
+compressed-tensors==0.9.2
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   sglang
+cryptography==50.0.2
+    # via
+    #   google-auth
+    #   modelscope-hub
+cuda-bindings==13.4.4
+    # via cuda-python
+cuda-core==1.2.2
+    # via cuda-python
+cuda-pathfinder==1.8.3
+    # via
+    #   cuda-bindings
+    #   cuda-core
+    #   cuda-python
+cuda-python==13.4.4
+    # via sglang
+cwevals==0.0.1b1
+    # via wandb
+datasets==3.6.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   sglang
+deepdiff==9.1.0
+    # via -r joint trainer/benchmark input
+dill==0.3.8
+    # via
+    #   -r joint trainer/benchmark input
+    #   datasets
+    #   multiprocess
+diskcache==5.6.3
+    # via outlines
+distlib==0.4.4
+    # via virtualenv
+distro==1.9.0
+    # via
+    #   cwevals
+    #   openai
+docstring-parser==0.18.0
+    # via -r joint trainer/benchmark input
+einops==0.8.2
+    # via
+    #   flash-attn
+    #   sglang
+executing==2.3.0
+    # via stack-data
+farama-notifications==0.0.6
+    # via gymnasium
+fastapi==0.159.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   sglang
+fastuuid==0.14.0
+    # via litellm
+filelock==4.2.4
+    # via
+    #   -r joint trainer/benchmark input
+    #   blobfile
+    #   datasets
+    #   huggingface-hub
+    #   modelscope
+    #   modelscope-hub
+    #   python-discovery
+    #   ray
+    #   torch
+    #   transformers
+    #   virtualenv
+flash-attn==2.7.4.post1
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+flashinfer-python==0.2.6.post1
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   sglang
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
+fsspec==2025.3.0
+    # via
+    #   datasets
+    #   huggingface-hub
+    #   torch
+google-api-core==2.42.0
+    # via opencensus
+google-auth==2.62.0
+    # via google-api-core
+googleapis-common-protos==1.75.5
+    # via
+    #   google-api-core
+    #   opentelemetry-exporter-otlp-proto-http
+grpcio==1.84.0
+    # via ray
+gymnasium==1.2.2
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+hf-transfer==0.1.9
+    # via sglang
+hf-xet==1.7.0
+    # via huggingface-hub
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   cwevals
+    #   litellm
+    #   openai
+huggingface-hub==0.36.2
+    # via
+    #   accelerate
+    #   datasets
+    #   peft
+    #   sglang
+    #   tokenizers
+    #   transformers
+hydra-core==1.3.2
+    # via -r joint trainer/benchmark input
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
+    #   requests
+    #   yarl
+importlib-metadata==9.0.1
+    # via litellm
+interegular==0.3.3
+    # via
+    #   outlines
+    #   outlines-core
+    #   sglang
+ipython==9.17.1
+    # via sglang
+ipython-pygments-lexers==1.1.1
+    # via ipython
+jedi==0.20.1
+    # via ipython
+jinja2==3.1.6
+    # via
+    #   litellm
+    #   outlines
+    #   torch
+jiter==0.17.0
+    # via openai
+jsonschema==4.26.0
+    # via
+    #   litellm
+    #   outlines
+    #   outlines-core
+    #   ray
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+lark==1.3.1
+    # via outlines
+litellm==1.82.6
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+llguidance==0.7.30
+    # via sglang
+loguru==0.7.3
+    # via -r joint trainer/benchmark input
+lxml==6.1.3
+    # via blobfile
+markdown-it-py==4.2.0
+    # via rich
+markupsafe==3.0.4
+    # via jinja2
+matplotlib-inline==0.2.2
+    # via ipython
+mdurl==0.1.2
+    # via markdown-it-py
+modelscope==1.40.2
+    # via sglang
+modelscope-hub==0.4.6
+    # via modelscope
+mpmath==1.3.0
+    # via sympy
+msgpack==1.2.3
+    # via ray
+msgspec==0.22.0
+    # via sglang
+multidict==7.1.0
+    # via
+    #   aiohttp
+    #   yarl
+multiprocess==0.70.16
+    # via datasets
+nest-asyncio==1.6.0
+    # via outlines
+networkx==3.7
+    # via torch
+ninja==1.13.2
+    # via
+    #   flashinfer-python
+    #   sglang
+    #   xgrammar
+numpy==1.26.4
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   cuda-core
+    #   datasets
+    #   flashinfer-python
+    #   gymnasium
+    #   outlines
+    #   pandas
+    #   peft
+    #   scipy
+    #   sglang
+    #   soundfile
+    #   tensordict
+    #   torchvision
+    #   transformers
+nvidia-cublas-cu12==12.6.4.1
+    # via
+    #   nvidia-cudnn-cu12
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-cuda-cupti-cu12==12.6.80
+    # via torch
+nvidia-cuda-nvrtc-cu12==12.6.77
+    # via torch
+nvidia-cuda-runtime-cu12==12.6.77
+    # via torch
+nvidia-cudnn-cu12==9.5.1.17
+    # via torch
+nvidia-cufft-cu12==11.3.0.4
+    # via torch
+nvidia-cufile-cu12==1.11.1.6
+    # via torch
+nvidia-curand-cu12==10.3.7.77
+    # via torch
+nvidia-cusolver-cu12==11.7.1.2
+    # via torch
+nvidia-cusparse-cu12==12.5.4.2
+    # via
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-cusparselt-cu12==0.6.3
+    # via torch
+nvidia-ml-py==13.615.71
+    # via pynvml
+nvidia-nccl-cu12==2.26.2
+    # via torch
+nvidia-nvjitlink-cu12==12.6.85
+    # via
+    #   nvidia-cufft-cu12
+    #   nvidia-cusolver-cu12
+    #   nvidia-cusparse-cu12
+    #   torch
+nvidia-nvtx-cu12==12.6.77
+    # via torch
+omegaconf==2.3.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   hydra-core
+openai==2.54.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   litellm
+    #   sglang
+opencensus==0.11.4
+    # via ray
+opencensus-context==0.1.3
+    # via opencensus
+opentelemetry-api==1.45.1
+    # via
+    #   fastapi
+    #   google-api-core
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-exporter-prometheus
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   wandb
+opentelemetry-exporter-http-transport==0.66b1
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-common==0.66b1
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-common==1.45.1
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.45.1
+    # via wandb
+opentelemetry-exporter-prometheus==1.12.0rc1
+    # via ray
+opentelemetry-proto==1.45.1
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
+    #   ray
+opentelemetry-sdk==1.45.1
+    # via
+    #   opentelemetry-exporter-otlp-common
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-exporter-prometheus
+    #   ray
+    #   wandb
+opentelemetry-semantic-conventions==0.66b1
+    # via opentelemetry-sdk
+orderly-set==5.5.0
+    # via deepdiff
+orjson==3.13.0
+    # via
+    #   sglang
+    #   tensordict
+outlines==0.1.11
+    # via sglang
+outlines-core==0.1.26
+    # via outlines
+packaging==26.3
+    # via
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   datasets
+    #   huggingface-hub
+    #   hydra-core
+    #   modelscope
+    #   peft
+    #   ray
+    #   sglang
+    #   transformers
+    #   virtualenv
+    #   wandb
+pandas==2.3.3
+    # via
+    #   -r joint trainer/benchmark input
+    #   datasets
+parso==0.8.7
+    # via jedi
+partial-json-parser==0.2.1.1.post7
+    # via sglang
+peft==0.15.2
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+pexpect==4.9.0
+    # via ipython
+pillow==13.0.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   sglang
+    #   torchvision
+platformdirs==4.13.5
+    # via
+    #   virtualenv
+    #   wandb
+prometheus-client==0.26.0
+    # via
+    #   opentelemetry-exporter-prometheus
+    #   ray
+    #   sglang
+prompt-toolkit==3.0.53
+    # via ipython
+propcache==0.5.4
+    # via
+    #   aiohttp
+    #   yarl
+proto-plus==1.29.0
+    # via google-api-core
+protobuf==7.36.2
+    # via
+    #   google-api-core
+    #   googleapis-common-protos
+    #   opentelemetry-proto
+    #   proto-plus
+    #   ray
+    #   wandb
+psutil==7.2.2
+    # via
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   ipython
+    #   peft
+    #   sglang
+ptyprocess==0.7.0
+    # via pexpect
+pure-eval==0.2.4
+    # via stack-data
+py-spy==0.4.2
+    # via ray
+pyarrow==19.0.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   datasets
+pyasn1==0.6.4
+    # via pyasn1-modules
+pyasn1-modules==0.4.2
+    # via google-auth
+pybind11==3.1.0
+    # via -r joint trainer/benchmark input
+pycountry==26.2.16
+    # via outlines
+pycparser==3.11
+    # via cffi
+pycryptodomex==3.24.1
+    # via blobfile
+pydantic==2.14.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   compressed-tensors
+    #   cwevals
+    #   fastapi
+    #   litellm
+    #   openai
+    #   outlines
+    #   ray
+    #   sglang
+    #   wandb
+    #   xgrammar
+pydantic-core==2.50.1
+    # via pydantic
+pygments==2.21.0
+    # via
+    #   ipython
+    #   ipython-pygments-lexers
+    #   rich
+pylatexenc==2.11
+    # via -r joint trainer/benchmark input
+pynvml==13.0.1
+    # via sglang
+python-dateutil==2.9.0.post0
+    # via pandas
+python-discovery==1.6.4
+    # via virtualenv
+python-dotenv==1.2.2
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   litellm
+python-multipart==0.0.32
+    # via sglang
+pytz==2026.5
+    # via pandas
+pyyaml==6.0.3
+    # via
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   datasets
+    #   huggingface-hub
+    #   omegaconf
+    #   peft
+    #   ray
+    #   transformers
+    #   wandb
+pyzmq==27.2.0
+    # via sglang
+ray==2.49.2
+    # via -r joint trainer/benchmark input
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+    #   outlines
+regex==2026.9.29
+    # via
+    #   tiktoken
+    #   transformers
+requests==2.34.2
+    # via
+    #   -r joint trainer/benchmark input
+    #   datasets
+    #   flashinfer-python
+    #   google-api-core
+    #   huggingface-hub
+    #   modelscope
+    #   modelscope-hub
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
+    #   outlines
+    #   ray
+    #   sglang
+    #   tiktoken
+    #   torchdata
+    #   transformers
+    #   wandb
+rich==15.0.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   typer
+rpds-py==2026.9.1
+    # via
+    #   jsonschema
+    #   referencing
+safetensors==0.8.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   peft
+    #   transformers
+scipy==1.17.1
+    # via sglang
+sentencepiece==0.2.2
+    # via xgrammar
+setproctitle==1.3.8
+    # via sglang
+setuptools==80.10.2
+    # via
+    #   -r joint trainer/benchmark input
+    #   modelscope
+    #   torch
+    #   triton
+sgl-kernel==0.1.7
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   sglang
+sglang==0.4.7
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via
+    #   opencensus
+    #   python-dateutil
+smart-open==8.0.4
+    # via ray
+sniffio==1.3.1
+    # via
+    #   cwevals
+    #   openai
+soundfile==0.13.1
+    # via sglang
+stack-data==0.6.3
+    # via ipython
+starlette==1.9.0
+    # via fastapi
+sympy==1.14.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   torch
+tabulate==0.10.0
+    # via -r joint trainer/benchmark input
+tenacity==9.2.1
+    # via -r joint trainer/benchmark input
+tensordict==0.6.2
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+tiktoken==0.14.0
+    # via
+    #   litellm
+    #   sglang
+    #   xgrammar
+tokenizers==0.21.4
+    # via
+    #   litellm
+    #   transformers
+toml==0.10.2
+    # via -r joint trainer/benchmark input
+torch==2.7.1
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   accelerate
+    #   compressed-tensors
+    #   flash-attn
+    #   flashinfer-python
+    #   outlines
+    #   peft
+    #   sglang
+    #   tensordict
+    #   torchaudio
+    #   torchdata
+    #   torchvision
+    #   xgrammar
+torch-memory-saver==0.0.10
+    # via -r joint trainer/benchmark input
+torchao==0.9.0
+    # via sglang
+torchaudio==2.7.1
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   sglang
+torchdata==0.11.0
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+torchvision==0.22.1
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   sglang
+tqdm==4.70.1
+    # via
+    #   -r joint trainer/benchmark input
+    #   datasets
+    #   huggingface-hub
+    #   modelscope
+    #   modelscope-hub
+    #   openai
+    #   outlines
+    #   peft
+    #   sglang
+    #   transformers
+traitlets==5.16.1
+    # via
+    #   ipython
+    #   matplotlib-inline
+transformers==4.52.3
+    # via
+    #   -c requirements/constraints-sglang.txt
+    #   -r joint trainer/benchmark input
+    #   compressed-tensors
+    #   peft
+    #   sglang
+    #   xgrammar
+triton==3.3.1
+    # via
+    #   torch
+    #   xgrammar
+typer==0.27.3
+    # via -r joint trainer/benchmark input
+typing-extensions==4.16.0
+    # via
+    #   aiohttp
+    #   aiosignal
+    #   anyio
+    #   cwevals
+    #   fastapi
+    #   grpcio
+    #   gymnasium
+    #   huggingface-hub
+    #   openai
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   outlines
+    #   pydantic
+    #   pydantic-core
+    #   referencing
+    #   starlette
+    #   torch
+    #   typing-inspection
+    #   wandb
+typing-inspection==0.4.4
+    # via
+    #   fastapi
+    #   pydantic
+tzdata==2026.5
+    # via pandas
+urllib3==2.8.0
+    # via
+    #   blobfile
+    #   modelscope
+    #   modelscope-hub
+    #   requests
+    #   torchdata
+uvicorn==0.54.0
+    # via
+    #   -r joint trainer/benchmark input
+    #   sglang
+uvloop==0.23.0
+    # via sglang
+virtualenv==21.14.12
+    # via ray
+wandb==0.31.0
+    # via -r joint trainer/benchmark input
+wcwidth==0.9.3
+    # via prompt-toolkit
+wrapt==2.5.1
+    # via smart-open
+xgrammar==0.1.19
+    # via sglang
+xxhash==4.0.2
+    # via
+    #   datasets
+    #   wandb
+yarl==1.25.1
+    # via aiohttp
+zipp==4.1.2
+    # via importlib-metadata

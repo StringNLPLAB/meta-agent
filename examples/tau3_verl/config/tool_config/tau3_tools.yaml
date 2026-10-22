@@ -1,0 +1,3 @@
+# Domain tools are loaded per example from public native tool schemas.
+# The rollout requires a tool configuration path even for dynamic tools.
+tools: []

@@ -2,6 +2,14 @@
 
 Use this reference only for compatible EAU/verl layouts. It describes bundled helper behavior and a code inspection of `InfoPO_handover_20260914`; it does not authorize launching training, installing supervision, or changing a recipe. Run records belong in the training checkout, never the skill installation.
 
+## Included training backend
+
+The full repository now includes the customized `verl/` package and a [portable τ³ training recipe](../../../../examples/tau3_verl/README.md). Use that recipe and its [dependency profile](../../../../requirements/README.md) when starting a new experiment with the included engine. They supply data preparation, native user simulation, explicit training reward proxies, and a launcher for `verl.trainer.main_ppo`; the generated runtime configuration owns training and periodic reviews. Weights and benchmark data remain external.
+
+`verl/vendor_provenance.json` identifies the copied source snapshot and local changes. Existing Apache/file-specific copyrights are retained in the repository's `NOTICE`. Optional legacy `symbolic_layer` hooks are not a supplied control implementation; their absent modules leave those hooks inactive. Initial discovery must establish a working gate and actual readers before proposing an application through them.
+
+The sections below document the original handover layout and helper compatibility. Old source locations and historical supervision helpers described there are not required by the included training recipe.
+
 ## Verified layout and version boundaries
 
 The inspected handover has sibling `InfoPO/` and `UserRL/` roots. Relevant evidence is in `InfoPO/HANDOVER.md`, `meta_agent/knob_inventory.md`, `reports/{change_log,meta_agent_experience,next_run_config}.md`, trainer/reward code under `InfoPO/verl/`, and gym readers under `UserRL/gyms/`. ColBench's `flow_user.py` and `code_env.py` are under `InfoPO/gyms/ColBenchGym/colbenchgym/env/`. Verify the actually imported copies before interpreting a live run; duplicate source trees and old absolute `/workspace/cm_workspace/...` defaults are present.

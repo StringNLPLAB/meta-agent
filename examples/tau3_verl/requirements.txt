@@ -1,0 +1,2 @@
+# GPU trainer dependency profile and installation order live at repository root.
+-r ../../requirements/verl-sglang.txt

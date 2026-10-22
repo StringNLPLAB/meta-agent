@@ -1,0 +1,6 @@
+# Install from the repository root in a fresh Python 3.12 CUDA environment:
+# Preinstall torch 2.7.1 and build tools first (see README.md), then:
+# python -m pip install --no-build-isolation -r requirements/verl-sglang.txt
+# This file is equivalent; the editable path is resolved relative to your cwd.
+-c constraints-sglang.txt
+-e .[sglang]

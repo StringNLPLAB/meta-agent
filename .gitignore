@@ -8,3 +8,7 @@ __pycache__/
 reports/
 logs/
 checkpoints/
+build/
+dist/
+*.egg-info/
+.pytest_cache/

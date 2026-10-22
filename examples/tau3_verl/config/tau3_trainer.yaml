@@ -1,0 +1,93 @@
+hydra:
+  searchpath:
+    - file://verl/trainer/config
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+algorithm:
+  adv_estimator: info_grpo
+  gamma: 0.8
+  action_credit_ratio: 0.8
+  use_kl_in_reward: false
+  use_intrinsic_reward: true
+  intrinsic_reward:
+    observation_placeholder: "No information found."
+    intrinsic_kl_batch_size: 2
+    intrinsic_weight: 0.1
+    normalize_intrinsic: true
+    use_intrinsic_only: false
+    intrinsic_gate_temperature: 0.05
+    debug: false
+    use_free_generation: false
+    generation_config:
+      temperature: 1.0
+      do_sample: false
+      eos_token_id: null
+
+data:
+  train_files: null
+  val_files: null
+  train_batch_size: 2
+  max_prompt_length: 8192
+  max_response_length: 8192
+  filter_overlong_prompts: true
+  truncation: error
+  return_raw_chat: true
+  need_tools_kwargs: true
+  dataloader_num_workers: 0
+
+actor_rollout_ref:
+  model:
+    path: null
+    use_remove_padding: true
+    enable_gradient_checkpointing: true
+    enable_activation_offload: true
+  actor:
+    ppo_mini_batch_size: 2
+    ppo_micro_batch_size_per_gpu: 1
+    use_kl_loss: false
+    entropy_coeff: 0.001
+    optim:
+      lr: 1.0e-6
+  rollout:
+    name: sglang
+    mode: sync
+    n: 2
+    tensor_model_parallel_size: 1
+    gpu_memory_utilization: 0.4
+    log_prob_micro_batch_size_per_gpu: 1
+    response_length_one_turn: 512
+    multi_turn:
+      enable: true
+      max_turns: 8
+      model_name: null
+      turn_level_method: Equalized
+      trajectory_score_method: Sum
+      tool_config_path: null
+  ref:
+    log_prob_micro_batch_size_per_gpu: 1
+    fsdp_config:
+      param_offload: true
+
+reward_model:
+  enable: false
+
+trainer:
+  project_name: meta-agent-tau3
+  experiment_name: tau3_verl
+  logger: [console]
+  nnodes: 1
+  n_gpus_per_node: 1
+  critic_warmup: 0
+  resume_mode: disable
+  val_before_train: false
+  test_freq: -1
+  save_freq: 10
+  total_epochs: 1
+  total_training_steps: 10
+  log_train_trajectories: 2
+  log_train_trajectories_freq: 1
+  debug_trajectory_freq: 1
+  default_local_dir: null

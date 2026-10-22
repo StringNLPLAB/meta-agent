@@ -61,6 +61,8 @@ Keep four judgments distinct: a source motivates investigating it; current evide
 
 Use native project tools. The optional [EAU / verl adapter](references/eau-adapter.md) documents verified code paths, helper interfaces, review records, and limitations; its project conventions are not universal requirements.
 
+When the full repository's InfoPO/verl training backend is selected, follow its [τ³ training recipe](../../../examples/tau3_verl/README.md) and [dependency profile](../../../requirements/README.md). Prepare an isolated CUDA training environment and the official train-only dataset, then use the generated runtime launch configuration for discovery and supervision. Keep the training policy, native user simulator, and coding-agent model separately configured. Other training projects continue to use their own inspected recipe.
+
 ## Complete each scheduled review
 
 1. Reassess active hypotheses using only permitted feedback. Keep predictions pending until their registered exposure window and sample requirement mature. At the end, classify supported, refuted (actual counterevidence), or unresolved; missing or weak evidence is not refutation. Record local mechanism predictions separately from final task benefit: one can hold without the other.

@@ -5,6 +5,18 @@ Copyright (c) 2026 Min Cai and contributors.
 The MIT license in LICENSE.txt applies to this project's original contributions.
 Materials covered by the original notice below retain their original licensing terms.
 
+The vendored verl/ package is the InfoPO customized fork of Volcano Engine
+Reinforcement Learning for LLMs (verl), with inherited UserRL integrations.
+It retains its Apache License 2.0 terms and original per-file copyrights,
+including Bytedance, Salesforce, SGLang, vLLM, NVIDIA and individual contributors.
+These files are not relicensed under this project's MIT license. The source
+snapshot and local modifications are identified in verl/vendor_provenance.json.
+The Apache License 2.0 text below applies to these Apache-covered components.
+
+verl/utils/device.py also retains its torchtune/Meta BSD attribution. The BSD
+3-Clause terms are reproduced at the end of this file; see its file header
+for the upstream source attribution.
+
 The bundled EAU reference paper retains its authors' copyright and its own
 distribution terms; the software license does not relicense the paper.
 
@@ -216,3 +228,35 @@ All rights reserved.
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+Torchtune / Meta BSD terms retained for verl/utils/device.py:
+Source: https://raw.githubusercontent.com/pytorch/torchtune/main/LICENSE
+
+BSD 3-Clause License
+
+Copyright 2024 Meta
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,this list
+of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this
+list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may
+be used to endorse or promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
