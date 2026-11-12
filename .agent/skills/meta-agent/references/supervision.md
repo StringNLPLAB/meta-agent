@@ -75,6 +75,16 @@ Idle timeout measures advancement of the parsed progress counter; appended loss 
 
 `--once` performs at most one due discovery/review/reconciliation/final pass and can be called by a host scheduler. It does not call the agent again if neither trigger is due. A continuous runner requires an explicit `--max-calls` budget; it counts all dispatched calls, including failed calls, discovery and reconciliation. Increase this limit explicitly when more supervision budget is authorized. `--stop-step` or a separately produced `--completion-file` triggers a read-only final review. A configured idle timeout takes precedence over another scheduled review, so timer reviews cannot keep a run past that timeout. Idle timeout, exhausted budget, or an explained agent handoff stops **supervision**, never training, and preserves unresolved state.
 
+## Optional trainer-triggered background audits
+
+The separate [non-blocking audit integration](../../../../docs/nonblocking-audits.md)
+provides trainer hooks for background reviews without waiting for a model call.
+It includes a project-gated proposal interface, a direct-file editor interface
+with natural-language output, bounded training-evidence snapshots and explicit
+experience-document inputs. It is opt-in and does not change this foreground
+supervisor. The integrating project supplies the backend command, access
+boundary, live consumers and worker-uptake checks.
+
 ## Agent backend and returned review
 
 The default backend is an installed, authenticated Codex CLI, using its configured model:

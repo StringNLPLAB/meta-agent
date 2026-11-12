@@ -61,6 +61,23 @@ The project gate is a programmatic validation and execution interface, not a pro
 
 The host needs Python 3, an authenticated Codex CLI or compatible agent backend, the training environment, and a supported way to own continuing jobs. Codex checks each project's launch interface, progress logs, diagnostic sources, and available runtime controls; the skill does not supply a tested integration for every training framework. It must establish and verify the job owner before claiming unattended supervision. The bundled runner remains a foreground review/gate process; the outer Codex agent launches training and arranges its lifetime. Skill text alone cannot keep a process alive after its host session ends. See the [implementation reference](.agent/skills/meta-agent/references/supervision.md) for the CLI, contract, execution gate, and recovery details used by Codex.
 
+## Optional non-blocking training audits
+
+The [`meta_agent` helpers](docs/nonblocking-audits.md) let a trainer trigger a
+background review at completed-update boundaries while training continues.
+They support a reviewer plus a project gate, or direct editing of declared hot
+interfaces with natural-language completion. Each request gets a new process
+and a snapshot of selected training logs, trajectories, metrics and experience
+documents. Busy requests coalesce; finalization stops writers before the last
+update. File changes, worker uptake and learning benefit are recorded as
+separate claims.
+
+The helpers use the Python standard library on Linux and require an explicit
+training integration and backend command. They do not replace the existing
+foreground skill supervisor. See the [integration guide](docs/nonblocking-audits.md)
+and run `python3 examples/nonblocking/train_demo.py` for an offline demonstration
+with no model or network calls.
+
 ## 🖨️Export meta-agent trajectories
 
 When trajectory recording is requested, Codex enables `--export-atif`. Each pass produces `requests/<ID>/trajectory.json` and an `export.json` coverage manifest, with a run-level `trajectories.json` index under the training checkout's `reports/supervision/<RUN>/`. These record the **meta-agent's** messages, tool calls, and decisions; training diagnostic samples or interaction trajectories remain separate review inputs. The exporter uses the matching Codex session when available and labels incomplete coverage.
@@ -72,6 +89,9 @@ The [intervention discovery guide](.agent/skills/meta-agent/references/intervent
 ## Validation
 
 Run offline helper regression checks with `python3 -m unittest discover -s .agent/skills/meta-agent/scripts/tests -v`. Fixtures use temporary training roots and do not connect to training processes.
+
+Run the non-blocking coordinator, direct-editor and evidence regression checks
+with `python3 -m unittest discover -s tests -v`.
 
 Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch contains the skill and supervision helpers; training frameworks, weights, and run outputs remain outside the package.
 
