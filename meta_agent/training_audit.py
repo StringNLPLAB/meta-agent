@@ -67,9 +67,17 @@ def before_training_step(step, *, is_final=False):
     audit = _get()
     if audit is not None:
         audit.before_step(step, is_final=is_final)
+    run = os.environ.get("EAU_TAU2_RUN")
+    if run:
+        from meta_agent.tau2_runtime import pin_update
+        pin_update(run, step=step)
 
 
 def audit_training_step(step, metrics, *, is_final=False):
+    run = os.environ.get("EAU_TAU2_RUN")
+    if run:
+        from meta_agent.tau2_runtime import refresh_context
+        refresh_context(run, metrics, step)
     audit = _get()
     if audit is not None:
         audit.on_step(step, metrics, is_final=is_final)

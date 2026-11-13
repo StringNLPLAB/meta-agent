@@ -1,0 +1,19 @@
+tools:
+  - class_name: "verl.tools.interact_tool.InteractTool"
+    config: {}
+    tool_schema:
+      type: "function"
+      function:
+        name: "interact_with_env"
+        description: "A tool for interacting with the Tau2-Bench customer service environment. Use this tool to send messages to the user or make tool calls to perform actions. Follow the system prompt for the policy and available actions."
+        parameters:
+          type: "object"
+          properties:
+            choice:
+              type: "string"
+              enum: ["message", "tool_call", "done"]
+              description: "Your choice of action: 'message' to send a message to the user, 'tool_call' to execute a tool, or 'done' to end the conversation."
+            content:
+              type: "string"
+              description: "The content of your action. For 'message', provide the text to send. For 'tool_call', provide the tool call in JSON or functional format. For 'done', this can be empty."
+          required: ["choice", "content"]

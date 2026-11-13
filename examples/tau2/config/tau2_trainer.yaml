@@ -1,0 +1,118 @@
+hydra:
+  searchpath:
+    - file://verl/trainer/config
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+# Algorithm configuration
+# Can be overridden via command line:
+#   - For GRPO multi-turn: algorithm.adv_estimator=grpo_multiturn
+#   - For Info-GRPO: algorithm.adv_estimator=info_grpo algorithm.use_intrinsic_reward=True
+algorithm:
+  adv_estimator: grpo_multiturn  # Default: grpo_multiturn, can be changed to info_grpo
+  gamma: 0.8
+  action_credit_ratio: 0.8
+  use_kl_in_reward: False
+
+  # Info-GRPO specific parameters (only used when adv_estimator=info_grpo)
+  use_intrinsic_reward: False
+  intrinsic_reward:
+    observation_placeholder: "No information found."
+    intrinsic_kl_batch_size: 2     # Batch size for parallel KL computation
+                                     # Increase to 64/128 for more parallelism, decrease to 8/16 if OOM
+    intrinsic_weight: 0.1           # β_0 (initial weight for intrinsic rewards) - Increased from 0.1 to allow stronger intrinsic signals
+    normalize_intrinsic: True       # Whether to normalize intrinsic rewards with GRPO group baseline
+    use_intrinsic_only: False      # If True, use only intrinsic rewards (ablation); if False, combine with outcome rewards (default)
+    intrinsic_gate_temperature: 0.05  # Temperature for variance-based gating - Increased from 0.1 to prevent over-suppression
+    debug: False                    # Set to True for debug logging
+    # Ablation: Free Generation vs Teacher Forcing
+    use_free_generation: False      # If True, use free generation (ablation); if False, use teacher forcing (default)
+    generation_config:              # Only used when use_free_generation=True
+      temperature: 1.0              # Sampling temperature (1.0 = no temperature scaling)
+      do_sample: False              # False = greedy, True = sampling
+      eos_token_id: null            # EOS token ID to stop generation (null = use tokenizer default)
+
+  # Keep GRPO settings
+  norm_adv_by_std_in_grpo: True
+
+# Dataset configuration
+data:
+  train_batch_size: 128
+  max_prompt_length: 8192  # Updated from 1152: tau2 prompts are long (policy + tools), min=1845, max=5769 tokens
+  max_response_length: 8192
+  filter_overlong_prompts: True
+  truncation: 'error'
+  return_raw_chat: True
+  # Will be populated by training script or overridden via command line
+  train_files: null
+  val_files: null
+
+# Actor, Rollout, and Reference Model Configuration
+actor_rollout_ref:
+  hybrid_engine: True
+
+  model:
+    path: /path/to/your/model  # Override via command line
+    use_remove_padding: True
+    enable_gradient_checkpointing: True
+    enable_activation_offload: True
+
+  actor:
+    ppo_mini_batch_size: 16
+    ppo_micro_batch_size_per_gpu: 8
+    use_kl_loss: False
+    kl_loss_coef: 0.001
+    kl_loss_type: low_var_kl
+    entropy_coeff: 0
+    fsdp_config:
+      param_offload: False
+      optimizer_offload: False
+    optim:
+      lr: 1e-6
+
+  rollout:
+    name: sglang
+    mode: sync
+    log_prob_micro_batch_size_per_gpu: 8
+    tensor_model_parallel_size: 1
+    gpu_memory_utilization: 0.50
+    n: 8  # Number of rollouts per prompt
+
+    # Multi-turn interaction configuration
+    multi_turn:
+      enable: True
+      max_turns: 16
+      model_name: gpt-4o  # Model for interaction (can override via env var MULTITURN_MODEL_NAME)
+      turn_level_method: Equalized
+      trajectory_score_method: Sum
+      tool_config_path: examples/tau2/config/tool_config/tau2_tool_config.yaml
+
+  ref:
+    fsdp_config:
+      param_offload: True
+
+# RAGEN Extensions (StarPO-S stabilization mechanisms)
+# These extensions can be enabled to improve training stability and sample efficiency
+ragen:
+  rollout_filter:
+    enable: False              # Enable uncertainty-based rollout filtering
+    ratio: 0.25                # Fraction of groups to keep (e.g., 0.25 keeps top 25% by variance)
+    filter_type: largest       # "largest" (keep high variance) or "smallest" (keep low variance)
+    metric: reward_variance    # "reward_variance" or "entropy_variance"
+    # group_size is automatically set from actor_rollout_ref.rollout.n
+
+# Trainer configuration
+trainer:
+  critic_warmup: 0
+  logger: ['console', 'wandb']
+  project_name: 'Tau2Gym-UserRL'
+  experiment_name: 'tau2_training'
+  n_gpus_per_node: 8
+  nnodes: 1
+  save_freq: 1
+  test_freq: 5
+  val_before_train: False
+  total_epochs: 15
+  default_local_dir: outputs/tau2_training

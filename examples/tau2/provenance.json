@@ -1,0 +1,10 @@
+{
+  "benchmark_upstream": "https://github.com/sierra-research/tau2-bench",
+  "benchmark_commit": "fc0055dc4e0a316c3f83133267fbd6faaa770992",
+  "benchmark_source_vendored": false,
+  "benchmark_download_split": "Explicit train/test selection, never full task labels in a training workspace",
+  "data_reference": "https://github.com/kfq20/InfoPO/tree/d230e78afb3890eb1c7eec2f27f75bcc6dceed8d/data/tau2_multiturn",
+  "training_parquet_sha256": "621ef8b70d53e1a52ea6c8198d9ef02fdaf159bb51041e7c184e072a691ad095",
+  "adapter": "Meta-Agent Tau2 training adapter; native evaluator delegated unchanged; authored reward/dynamics restricted to training",
+  "verification_scope": "CPU native/scripted-model integration and real Hydra composition; no claim of a complete GPU training run from this new package"
+}

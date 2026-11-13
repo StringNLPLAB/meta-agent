@@ -245,3 +245,12 @@ reviewer fixture, an atomic scalar gate and temporary files. It makes no model
 or network calls and is not a benchmark result. It illustrates a trainer
 continuing while a review runs, coalesced requests, reloaded controls and
 read-only finalization.
+
+## Standalone Tau2 integration
+
+The [Tau2 package](../examples/tau2/README.md) supplies an actual distributed
+InfoPO trainer integration, original train data, CoSER serving, update-boundary
+user/environment/RL snapshots, fresh-session command adapter, prose-only
+experience transfer and separate native ALL evaluation. Its documentation
+distinguishes a detached training split from an enforced OS/network sandbox
+and records what was checked without claiming an unexecuted GPU run.

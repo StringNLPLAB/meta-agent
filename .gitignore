@@ -5,3 +5,18 @@ __pycache__/
 .env.*
 !.env.example
 .DS_Store
+
+# Local experiments and credentials
+/reports/
+/outputs/
+/workspace/
+*.key
+*.pem
+id_rsa*
+id_ed25519*
+**/checkpoints/
+*.safetensors
+*.pt
+*.ckpt
+wandb/
+*.egg-info/

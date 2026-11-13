@@ -1,0 +1,17 @@
+.git
+**/__pycache__
+**/*.pyc
+.venv
+.env
+.env.*
+*.key
+*.pem
+id_rsa*
+id_ed25519*
+reports
+outputs
+**/checkpoints
+**/*.safetensors
+**/*.pt
+**/*.ckpt
+wandb

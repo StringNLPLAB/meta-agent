@@ -1,0 +1,72 @@
+{%- set ns = namespace(has_tool_history=false) -%}
+{%- for message in messages -%}
+{%- if message['role'] in ['tool', 'ipython'] or message.get('tool_calls') -%}
+{%- set ns.has_tool_history = true -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if not tools and not ns.has_tool_history -%}{{ '<|begin_of_text|>' }}{% if messages[0]['role'] == 'system' %}{% set loop_messages = messages[1:] %}{% set system_message = messages[0]['content'] %}{% else %}{% set loop_messages = messages %}{% endif %}{% if system_message is defined %}{{ '<|start_header_id|>system<|end_header_id|>
+
+' + system_message + '<|eot_id|>' }}{% endif %}{% for message in loop_messages %}{% set content = message['content'] %}{% if message['role'] == 'user' %}{{ '<|start_header_id|>user<|end_header_id|>
+
+' + content + '<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+' }}{% elif message['role'] == 'assistant' %}{{ content + '<|eot_id|>' }}{% endif %}{% endfor %}{%- else -%}
+{{- '<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+Environment: ipython
+
+' -}}
+{%- if messages[0]['role'] == 'system' -%}
+{{- (messages[0]['content'] or '') + '
+
+' -}}
+{%- set loop_messages = messages[1:] -%}
+{%- else -%}
+{%- set loop_messages = messages -%}
+{%- endif -%}
+{{- 'The available functions are provided below in JSON format. Use them only when needed. To call a function, emit only a JSON object with keys "name" and "arguments" and then end your turn. Call one function at a time. Use ordinary text when no function is needed.
+
+' -}}
+{%- for tool in tools or [] -%}
+{{- (tool['function'] if 'function' in tool else tool) | tojson(indent=2) -}}
+{{- '
+
+' -}}
+{%- endfor -%}
+{{- '<|eot_id|>' -}}
+{%- for message in loop_messages -%}
+{%- if message['role'] in ['tool', 'ipython'] -%}
+{{- '<|start_header_id|>ipython<|end_header_id|>
+
+' + (message['content'] or '') + '<|eot_id|>' -}}
+{%- elif message['role'] == 'assistant' -%}
+{{- '<|start_header_id|>assistant<|end_header_id|>
+
+' + (message['content'] or '') -}}
+{%- if message.get('tool_calls') -%}
+{%- for call in message['tool_calls'] -%}
+{%- set function = call['function'] if 'function' in call else call -%}
+{%- set arguments = function.get('arguments', function.get('parameters', {})) -%}
+{{- '' if loop.first else ';' -}}
+{{- '{"name": ' + (function['name'] | tojson) + ', "arguments": ' -}}
+{{- arguments if arguments is string else arguments | tojson -}}
+{{- '}' -}}
+{%- endfor -%}
+{{- '<|eot_id|>' -}}
+{%- else -%}
+{{- '<|eot_id|>' -}}
+{%- endif -%}
+{%- elif message['role'] in ['user', 'system'] -%}
+{{- '<|start_header_id|>' + message['role'] + '<|end_header_id|>
+
+' + (message['content'] or '') + '<|eot_id|>' -}}
+{%- else -%}
+{{- raise_exception('Unsupported CoSER chat role') -}}
+{%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+{{- '<|start_header_id|>assistant<|end_header_id|>
+
+' -}}
+{%- endif -%}
+{%- endif -%}

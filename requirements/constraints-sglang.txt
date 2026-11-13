@@ -1,0 +1,22 @@
+# Compatible NVIDIA SGLang profile, checked against official PyPI metadata.
+# Do not combine with vllm==0.9.1 (that release requires torch==2.7.0).
+sglang==0.4.7
+torch==2.7.1
+torchaudio==2.7.1
+torchvision==0.22.1
+transformers==4.52.3
+sgl-kernel==0.1.7
+flashinfer-python==0.2.6.post1
+flash-attn==2.7.4.post1
+# SGLang 0.4.7's compressed-tensor adapter derives from vLLM 0.8.2,
+# whose official profile pins this API generation.
+compressed-tensors==0.9.2
+tensordict==0.6.2
+torchdata==0.11.0
+numpy>=1.26,<2
+peft==0.15.2
+accelerate==1.7.0
+# Native tau2 1.0.1 text/Gym adapter dependencies tested by the CPU fixtures.
+gymnasium==1.2.2
+litellm==1.82.6
+python-dotenv==1.2.2

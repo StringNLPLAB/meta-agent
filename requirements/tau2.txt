@@ -1,0 +1,3 @@
+# Run pip from the repository root, after installing Torch/build dependencies.
+-r verl-sglang.txt
+-r tau2-cpu.txt

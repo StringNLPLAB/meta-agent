@@ -61,6 +61,15 @@ The project gate is a programmatic validation and execution interface, not a pro
 
 The host needs Python 3, an authenticated Codex CLI or compatible agent backend, the training environment, and a supported way to own continuing jobs. Codex checks each project's launch interface, progress logs, diagnostic sources, and available runtime controls; the skill does not supply a tested integration for every training framework. It must establish and verify the job owner before claiming unattended supervision. The bundled runner remains a foreground review/gate process; the outer Codex agent launches training and arranges its lifetime. Skill text alone cannot keep a process alive after its host session ends. See the [implementation reference](.agent/skills/meta-agent/references/supervision.md) for the CLI, contract, execution gate, and recovery details used by Codex.
 
+## Standalone Tau2 training and evaluation
+
+The [Tau2 experiment package](examples/tau2/README.md) includes the InfoPO/verl
+engine, original 178-row public training dataset, CoSER adapter, pinned data and
+model identities, a five-round launcher, non-blocking hot interfaces for user,
+environment/reward and RL settings, and separate native held-out evaluation.
+Model weights and benchmark source are prepared separately with the supplied
+commands. It requires no platform SDK or another project checkout.
+
 ## Optional non-blocking training audits
 
 The [`meta_agent` helpers](docs/nonblocking-audits.md) let a trainer trigger a
@@ -93,7 +102,7 @@ Run offline helper regression checks with `python3 -m unittest discover -s .agen
 Run the non-blocking coordinator, direct-editor and evidence regression checks
 with `python3 -m unittest discover -s tests -v`.
 
-Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch contains the skill and supervision helpers; training frameworks, weights, and run outputs remain outside the package.
+Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch includes the skill, supervision helpers and a standalone Tau2 integration with the customized verl engine. Model weights and generated run outputs remain outside the package.
 
 ## Citation
 
