@@ -25,6 +25,8 @@ from this repository's root.
 | Evaluation | Separate 100 tasks: retail 40, airline 20, telecom 40; 4 trials/task; native ALL |
 | Evaluation models | gpt-4o-mini user and NL-assertion judge, both temperature 0.7; policy temperature 0.7, 8,192 tokens, 50 steps |
 
+The live SGLang scheduler input limit is checked before every generation; its reserved tokens are respected without truncating history or enlarging the configured context.
+
 ACTION training reward and native ALL task success are different quantities.
 The B0 milestone profile is explicit; do not describe it as native-only Tau2.
 `--native-reward` removes these milestones while retaining the same adapter and

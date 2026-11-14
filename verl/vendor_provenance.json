@@ -825,6 +825,10 @@
       "sha256": "01930881f91f180c11dd1732be519c6d52ff21dc8f12856d5c0a5ff17b108b41"
     },
     {
+      "path": "verl/utils/sglang_request_budget.py",
+      "sha256": "fc1ae4220c35e589effd734015b4ef597543dfc762a8d07f4b23558fd8932c12"
+    },
+    {
       "path": "verl/utils/tau2_rewards.py",
       "sha256": "e166855948583f9df1d1e268f582f60fb442a2ac13a2d4ff3c3de01db7276021"
     },
@@ -994,7 +998,7 @@
     },
     {
       "path": "verl/workers/rollout/sglang_rollout/sglang_rollout_customized.py",
-      "sha256": "11015f73bbb92e71b047c121017831f328ffb03327ba37e78e077c75f463c0b4"
+      "sha256": "3010ae8b82abf6a8819862a4b957631d5a826a65668c6c6e95c43599ca197739"
     },
     {
       "path": "verl/workers/rollout/sglang_rollout/utils.py",
@@ -1063,7 +1067,8 @@
       "Tau2 per-turn reward preservation and current native tool adapters.",
       "CUDA memory-saver and model-only checkpoint compatibility.",
       "Trajectory serialization accepts scalar diagnostics and summarizes token matrices without changing learning tensors.",
-      "Dataset template kwargs honor non-thinking in prompt filtering/tokenization; public List-metadata compatibility fallback."
+      "Dataset template kwargs honor non-thinking in prompt filtering/tokenization; public List-metadata compatibility fallback.",
+      "Respect the live SGLang scheduler max_req_input_len before a generation; preserve existing length termination without truncating history or creating fallback samples."
     ]
   }
 }

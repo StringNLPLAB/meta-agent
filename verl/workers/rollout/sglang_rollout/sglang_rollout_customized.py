@@ -65,6 +65,7 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import PreTrainedTokenizer
 
 from verl import DataProto
+from verl.utils.sglang_request_budget import generation_budget
 from verl.third_party.sglang import parallel_state as sglang_ps
 from verl.tools.base_tool import BaseTool
 from verl.tools.schemas import (
@@ -1535,7 +1536,10 @@ class SGLangRollout(BaseRollout):
             elif _req.state == AsyncRolloutRequestStateEnum.RUNNING:
                 # Only continue the conversation if the prompt length is not greater than max_model_len - 1,
                 # since SGLang raises an error when max_new_tokens + 1 is greater to max_model_len (the extra token accounts for the EOS token).
-                if len(_req.get_generation_prompt_ids(self.tokenizer)) + 1 >= self.config.max_model_len:
+                if generation_budget(context_length=self.config.max_model_len,
+                        input_length=len(_req.get_generation_prompt_ids(self.tokenizer)),
+                        response_length=self.config.response_length, scheduler_info=self._engine.scheduler_info,
+                        turn_limit=self.config.get("response_length_one_turn")) == 0:
                     finish_reason_type = FinishReasonTypeEnum.LENGTH
                     break
                 turn_boundaries.append(len(_req.input_ids))
@@ -2203,17 +2207,11 @@ class SGLangRollout(BaseRollout):
 
     async def _handle_engine_call(self, _req: AsyncRolloutRequest, do_sample: bool, is_validate: bool, override_n: bool = True, **kwargs) -> dict:
         generation_prompt_ids = _req.get_generation_prompt_ids(self.tokenizer)
-        # Adjust max_new_tokens to ensure it is not greater than max_model_len - 1
-        # SGLang raises an error when max_new_tokens + 1 is greater to max_model_len (the extra token accounts for the EOS token).
-        max_new_tokens = min(self.config.response_length, self.config.max_model_len - len(generation_prompt_ids) - 1)
-
-        # Ensure max_new_tokens is at least 1
-        max_new_tokens = max(max_new_tokens, 1)
-
-        # Apply response_length_one_turn limit if configured (for multi-turn conversations)
-        # This limits each turn's generation length, while allowing total response to accumulate
-        if self.config.get("response_length_one_turn", None):
-            max_new_tokens = min(self.config.response_length_one_turn, max_new_tokens)
+        max_new_tokens = generation_budget(context_length=self.config.max_model_len,
+            input_length=len(generation_prompt_ids), response_length=self.config.response_length,
+            scheduler_info=self._engine.scheduler_info, turn_limit=self.config.get("response_length_one_turn"))
+        if max_new_tokens == 0:
+            raise ValueError("Generation requested beyond the live scheduler input cap")
 
         if not do_sample:
             kwargs = dict(
