@@ -40,11 +40,15 @@ def _is_qwen3_model(tokenizer: PreTrainedTokenizer) -> bool:
 
 
 def _enable_thinking(tokenizer: PreTrainedTokenizer) -> bool:
-    """Match upstream UserRL: use the model template's default (thinking for
-    Qwen3). USERRL_ENABLE_QWEN3_THINKING=0 explicitly disables it."""
+    """Honor an explicit mode even when weights have a generic local path."""
+    override = os.environ.get("USERRL_ENABLE_QWEN3_THINKING")
+    if override is not None:
+        if override not in {"0", "1"}:
+            raise ValueError("USERRL_ENABLE_QWEN3_THINKING must be 0 or 1")
+        return override == "1"
     if not _is_qwen3_model(tokenizer):
         return True
-    return os.getenv("USERRL_ENABLE_QWEN3_THINKING", "0") == "1"
+    return False
 
 
 class FinishReasonTypeEnum(str, Enum):

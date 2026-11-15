@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('request_budget', ROOT / 'verl/utils/sglang_request_budget.py')
 budget = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(budget)
+spec = importlib.util.spec_from_file_location('nonthinking_policy', ROOT / 'verl/utils/nonthinking_policy.py')
+nonthinking = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(nonthinking)
 
 
 class Config(dict):
@@ -29,7 +32,8 @@ class BudgetTests(unittest.TestCase):
     def test_real_engine_call_never_submits_the_crashing_input_or_changes_valid_sampling(self):
         source=ast.parse((ROOT/'verl/workers/rollout/sglang_rollout/sglang_rollout_customized.py').read_text())
         node=next(n for n in ast.walk(source) if isinstance(n,ast.AsyncFunctionDef) and n.name=='_handle_engine_call')
-        namespace=dict(generation_budget=budget.generation_budget,AsyncRolloutRequest=object,_RETOK_PROBE=False,_USE_SAMPLED_IDS=False)
+        namespace=dict(generation_budget=budget.generation_budget,AsyncRolloutRequest=object,_RETOK_PROBE=False,_USE_SAMPLED_IDS=False,
+            check_nonthinking_input=nonthinking.check_input,check_nonthinking_output=nonthinking.check_output)
         exec(compile(ast.fix_missing_locations(ast.Module(body=[node],type_ignores=[])),'actual_rollout_method','exec'),namespace)
         requests=[]
         async def generate(**kwargs):

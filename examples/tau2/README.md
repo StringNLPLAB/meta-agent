@@ -27,6 +27,13 @@ from this repository's root.
 
 The live SGLang scheduler input limit is checked before every generation; its reserved tokens are respected without truncating history or enlarging the configured context.
 
+The explicit non-thinking switch takes precedence over model-name detection,
+including weights downloaded into a directory named `base`. Every actual policy
+generation prompt must include the closed empty thinking suffix, and each
+sampled completion is checked before it enters training. Reasoning violations
+stop the attempt; reasoning is not stripped and outputs are not resampled.
+Periodic per-worker receipts are saved under `nonthinking_behavior/`.
+
 ACTION training reward and native ALL task success are different quantities.
 The B0 milestone profile is explicit; do not describe it as native-only Tau2.
 `--native-reward` removes these milestones while retaining the same adapter and

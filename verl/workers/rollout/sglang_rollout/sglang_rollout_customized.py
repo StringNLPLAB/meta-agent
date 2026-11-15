@@ -66,6 +66,7 @@ from transformers import PreTrainedTokenizer
 
 from verl import DataProto
 from verl.utils.sglang_request_budget import generation_budget
+from verl.utils.nonthinking_policy import check_input as check_nonthinking_input, check_output as check_nonthinking_output
 from verl.third_party.sglang import parallel_state as sglang_ps
 from verl.tools.base_tool import BaseTool
 from verl.tools.schemas import (
@@ -2207,6 +2208,7 @@ class SGLangRollout(BaseRollout):
 
     async def _handle_engine_call(self, _req: AsyncRolloutRequest, do_sample: bool, is_validate: bool, override_n: bool = True, **kwargs) -> dict:
         generation_prompt_ids = _req.get_generation_prompt_ids(self.tokenizer)
+        check_nonthinking_input(self.tokenizer, generation_prompt_ids)
         max_new_tokens = generation_budget(context_length=self.config.max_model_len,
             input_length=len(generation_prompt_ids), response_length=self.config.response_length,
             scheduler_info=self._engine.scheduler_info, turn_limit=self.config.get("response_length_one_turn"))
@@ -2264,6 +2266,7 @@ class SGLangRollout(BaseRollout):
                 sampling_params=self.sampling_params,
                 return_logprob=(_RETOK_PROBE or _USE_SAMPLED_IDS),
             )
+        check_nonthinking_output(output)
         return output
 
     async def _handle_pending_state(self, _req: AsyncRolloutRequest) -> AsyncRolloutRequest:
