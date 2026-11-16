@@ -29,10 +29,11 @@ The live SGLang scheduler input limit is checked before every generation; its re
 
 The explicit non-thinking switch takes precedence over model-name detection,
 including weights downloaded into a directory named `base`. Every actual policy
-generation prompt must include the closed empty thinking suffix, and each
-sampled completion is checked before it enters training. Reasoning violations
-stop the attempt; reasoning is not stripped and outputs are not resampled.
-Periodic per-worker receipts are saved under `nonthinking_behavior/`.
+generation prompt must include the closed empty thinking suffix. Output
+deviations are counted and the raw on-policy samples are retained without
+stripping, filtering or resampling. A marker in a completion does not terminate
+training. Per-worker receipts under `nonthinking_behavior/` are updated
+periodically and flushed when saving checkpoints.
 
 ACTION training reward and native ALL task success are different quantities.
 The B0 milestone profile is explicit; do not describe it as native-only Tau2.

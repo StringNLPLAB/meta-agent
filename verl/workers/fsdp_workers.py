@@ -904,6 +904,8 @@ class ActorRolloutRefWorker(Worker):
     def save_checkpoint(self, local_path, hdfs_path=None, global_step=0, max_ckpt_to_keep=None):
         # only support save and load ckpt for actor
         assert self._is_actor
+        from verl.utils.nonthinking_policy import flush_behavior
+        flush_behavior()
 
         if self._is_offload_param:
             load_fsdp_model_to_gpu(self.actor_module_fsdp)

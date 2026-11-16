@@ -28,6 +28,10 @@ class Config(dict):
 
 
 class NonthinkingTests(unittest.TestCase):
+    def setUp(self):
+        gate._COUNTS.update({key:0 for key in gate._COUNTS})
+        gate._LAST_DEVIATION=None
+
     def test_explicit_switch_survives_generic_local_tokenizer_paths(self):
         tree = ast.parse((ROOT / 'verl/workers/rollout/schemas.py').read_text())
         functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)
@@ -74,17 +78,35 @@ class NonthinkingTests(unittest.TestCase):
 
     def test_actual_missing_prefix_blocks_generation(self):
         execute, calls = self.engine_case('assistant\n', {'text':'OK'})
-        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1','USERRL_ENABLE_QWEN3_THINKING':'0'}):
+        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1','USERRL_ENABLE_QWEN3_THINKING':'0','EAU_NONTHINKING_OUTPUT_POLICY':'error'}):
             with self.assertRaises(RuntimeError):
                 asyncio.run(execute())
         self.assertEqual(calls, [])
 
     def test_reasoning_fails_without_stripping_or_retrying(self):
         execute, calls = self.engine_case('assistant\n'+gate.EMPTY_THINKING_SUFFIX, {'text':'<think>reasoning</think>OK'})
-        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1','USERRL_ENABLE_QWEN3_THINKING':'0'}):
+        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1','USERRL_ENABLE_QWEN3_THINKING':'0','EAU_NONTHINKING_OUTPUT_POLICY':'error'}):
             with self.assertRaises(RuntimeError):
                 asyncio.run(execute())
         self.assertEqual(len(calls), 1)
+
+    def test_monitor_keeps_deviating_on_policy_output_without_retry_or_filtering(self):
+        import tempfile,json
+        output={'text':'<think>model deviation</think>raw action'}
+        execute,calls=self.engine_case('assistant\n'+gate.EMPTY_THINKING_SUFFIX,output)
+        with tempfile.TemporaryDirectory() as directory,patch.dict(os.environ,{
+                'EAU_REQUIRE_NONTHINKING_POLICY':'1','USERRL_ENABLE_QWEN3_THINKING':'0',
+                'EAU_NONTHINKING_OUTPUT_POLICY':'monitor','EAU_NONTHINKING_BEHAVIOR_DIR':directory}):
+            gate._COUNTS.update({key:0 for key in gate._COUNTS})
+            self.assertIs(asyncio.run(execute()),output)
+            record=json.loads(next(Path(directory).glob('*.json')).read_text())
+            self.assertEqual(record['thinking_marker_outputs'],1)
+            self.assertEqual(record['nonempty_thinking_block_outputs'],1)
+            self.assertEqual(record['sampled_completions_checked'],1)
+            self.assertTrue(record['raw_completions_preserved'])
+            self.assertFalse(record['reasoning_stripped'])
+        self.assertEqual(len(calls),1)
+        self.assertEqual(calls[0]['sampling_params']['temperature'],.6)
 
     def test_valid_generation_retains_sampling_and_raw_completion(self):
         import tempfile
@@ -101,7 +123,7 @@ class NonthinkingTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
 
     def test_malformed_reasoning_is_also_rejected(self):
-        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1'}):
+        with patch.dict(os.environ, {'EAU_REQUIRE_NONTHINKING_POLICY':'1','EAU_NONTHINKING_OUTPUT_POLICY':'error'}):
             gate._COUNTS.update(input_calls_checked=10, sampled_completions_checked=0)
             for text in ['<think>unfinished', 'reasoning</think>', '<THINK>reasoning</THINK>']:
                 with self.subTest(text=text), self.assertRaises(RuntimeError):

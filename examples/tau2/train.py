@@ -47,6 +47,7 @@ def environment(workspace, run, args):
         EAU_TERMINAL_REWARD_AUDIT_DIR=str(run / "terminal_action_scores"),
         USERRL_ENABLE_QWEN3_THINKING="0", USERRL_STRIP_QWEN_THINK_OUTPUT="0",
         EAU_REQUIRE_NONTHINKING_POLICY="1", EAU_NONTHINKING_BEHAVIOR_DIR=str(run / "nonthinking_behavior"),
+        EAU_NONTHINKING_OUTPUT_POLICY="monitor",
         USERRL_TERMINAL_TASK_REWARD_ONLY="0", USERRL_EVAL_DUMP_DIR=str(run / "training_samples"),
         USERRL_DEBUG_DUMP_GYMS="tau2", OPENAI_API_KEY="EMPTY", OPENAI_API_BASE=args.coser_url,
         PYTHONUNBUFFERED="1", PYTHONDONTWRITEBYTECODE="1", TOKENIZERS_PARALLELISM="false",
