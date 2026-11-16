@@ -20,6 +20,12 @@ for the upstream source attribution.
 The bundled EAU reference paper retains its authors' copyright and its own
 distribution terms; the software license does not relicense the paper.
 
+The ColBench backend-programming adapter and flow-user implementation are
+ported from the EAU training checkout. Their public dataset provenance and
+the separately obtained facebookresearch/sweet_rl reference revision are
+documented in examples/colbench/README.md. The dataset, reference checkout,
+model weights and generated experimental outputs are not bundled here.
+
 Original repository license notice and terms (retained):
 
 Apache License Version 2.0

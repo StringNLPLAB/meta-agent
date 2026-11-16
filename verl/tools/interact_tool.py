@@ -196,6 +196,8 @@ class InteractTool(BaseTool):
                     timeout=self.env_step_timeout
                 )
             except asyncio.TimeoutError:
+                if current_env_name == "ColBenchCodeEnv" and os.environ.get("EAU_COLBENCH_RUN"):
+                    raise
                 print(
                     f"Environment step timed out for {instance_id} after "
                     f"{self.env_step_timeout:g}s; returning terminal fallback"
@@ -203,6 +205,8 @@ class InteractTool(BaseTool):
                 observation = {"feedback": "Environment operation timed out"}
                 reward, terminated, truncated, info = 0.0, True, False, {"timeout": True}
             except Exception as e:
+                if current_env_name == "ColBenchCodeEnv" and os.environ.get("EAU_COLBENCH_RUN"):
+                    raise
                 print(f"Environment step failed for {instance_id}: {e}")
                 # Return safe fallback values
                 observation = {"feedback": f"Error: {str(e)}"}
@@ -305,6 +309,8 @@ class InteractTool(BaseTool):
                     print(f"ColBench reward calculated: {reward} (agent_answer length: {len(env.agent_answer) if hasattr(env, 'agent_answer') else 0})")
                 return float(reward)
             except Exception as e:
+                if os.environ.get("EAU_COLBENCH_RUN"):
+                    raise
                 print(f"Error calculating ColBench reward for {instance_id}: {e}")
                 import traceback
                 traceback.print_exc()

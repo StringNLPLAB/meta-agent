@@ -70,6 +70,16 @@ environment/reward and RL settings, and separate native held-out evaluation.
 Model weights and benchmark source are prepared separately with the supplied
 commands. It requires no platform SDK or another project checkout.
 
+## Standalone ColBench training
+
+The [ColBench package](examples/colbench/README.md) adds the backend-programming
+environment, symbolic/LLM user mixture, pinned public train-data preparation,
+PPO/GAE launch configuration, direct non-blocking edits to user/environment/RL
+interfaces, and a five-round launcher that transfers prose experience only.
+It uses this repository's training engine and has no platform SDK dependency.
+The training-only container mounts and external evaluation boundary are
+documented separately from the local execution mode.
+
 ## Optional non-blocking training audits
 
 The [`meta_agent` helpers](docs/nonblocking-audits.md) let a trainer trigger a
@@ -102,7 +112,7 @@ Run offline helper regression checks with `python3 -m unittest discover -s .agen
 Run the non-blocking coordinator, direct-editor and evidence regression checks
 with `python3 -m unittest discover -s tests -v`.
 
-Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch includes the skill, supervision helpers and a standalone Tau2 integration with the customized verl engine. Model weights and generated run outputs remain outside the package.
+Originally developed for **EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents**. This branch includes the skill, supervision helpers and standalone Tau2 and ColBench integrations with the customized verl engine. Model weights and generated run outputs remain outside the package.
 
 ## Citation
 

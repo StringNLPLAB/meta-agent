@@ -1,0 +1,7 @@
+# Data preparation, environment and CPU contract checks; no GPU model installs.
+hydra-core==1.3.2
+pyarrow==19.0.1
+numpy>=1.26,<2
+PyYAML>=6
+openai>=2.8,<3
+# Add requirements/verl-sglang.txt for actual GPU training.

@@ -71,6 +71,12 @@ def before_training_step(step, *, is_final=False):
     if run:
         from meta_agent.tau2_runtime import pin_update
         pin_update(run, step=step)
+    colbench = os.environ.get("EAU_COLBENCH_RUN")
+    if colbench:
+        if run:
+            raise ValueError("Select one benchmark runtime per training process")
+        from meta_agent.colbench_runtime import pin_update
+        pin_update(colbench, step=step)
 
 
 def audit_training_step(step, metrics, *, is_final=False):
@@ -78,6 +84,12 @@ def audit_training_step(step, metrics, *, is_final=False):
     if run:
         from meta_agent.tau2_runtime import refresh_context
         refresh_context(run, metrics, step)
+    colbench = os.environ.get("EAU_COLBENCH_RUN")
+    if colbench:
+        if run:
+            raise ValueError("Select one benchmark runtime per training process")
+        from meta_agent.colbench_runtime import refresh_context
+        refresh_context(colbench, metrics, step)
     audit = _get()
     if audit is not None:
         audit.on_step(step, metrics, is_final=is_final)

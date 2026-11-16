@@ -125,6 +125,9 @@ class ActorRolloutRefWorker(Worker):
     def __init__(self, config: DictConfig, role: str):
         super().__init__()
         self.config = config
+        if "EAU_TRAINING_SEED" in os.environ:
+            from transformers import set_seed
+            set_seed(int(os.environ["EAU_TRAINING_SEED"]))
         import torch.distributed
 
         if not torch.distributed.is_initialized():
@@ -959,6 +962,9 @@ class ActorRolloutRefWorker(Worker):
 class CriticWorker(Worker):
     def __init__(self, config):
         super().__init__()
+        if "EAU_TRAINING_SEED" in os.environ:
+            from transformers import set_seed
+            set_seed(int(os.environ["EAU_TRAINING_SEED"]))
         import torch.distributed
 
         if not torch.distributed.is_initialized():

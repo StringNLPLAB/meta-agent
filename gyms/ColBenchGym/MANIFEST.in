@@ -1,0 +1,3 @@
+include colbenchgym/prompts/*.txt
+include README.md
+include MIGRATION_GUIDE.md

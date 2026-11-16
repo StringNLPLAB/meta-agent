@@ -362,6 +362,8 @@ class SGLangRollout(BaseRollout):
                 dtype=self.config.dtype,
                 mem_fraction_static=self.config.gpu_memory_utilization,
                 enable_memory_saver=True,
+                **({"random_seed": int(os.environ["EAU_TRAINING_SEED"]) + rank}
+                   if "EAU_TRAINING_SEED" in os.environ else {}),
                 base_gpu_id=0,
                 gpu_id_step=1,
                 tp_size=self._tp_size,

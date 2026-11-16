@@ -1070,5 +1070,19 @@
       "Dataset template kwargs honor non-thinking in prompt filtering/tokenization; public List-metadata compatibility fallback.",
       "Respect the live SGLang scheduler max_req_input_len before a generation; preserve existing length termination without truncating history or creating fallback samples."
     ]
+  },
+  "colbench_integration": {
+    "engine_parent_commit": "67dfeb201addbc61fc26332b9705101d4b65c11c",
+    "scope": "Standalone ColBench backend training port; no model weights, benchmark data or evaluation results bundled",
+    "adaptations": [
+      "Add environment and symbolic flow-user package and public train-data converter.",
+      "Use existing PPO/multiturn-GAE SAO engine with explicit original policy/critic initialization.",
+      "Dispatch ColBench non-blocking audits and publish checked update snapshots, with episode uptake receipts.",
+      "Propagate ColBench training user/step/scoring failures rather than using terminal fallback replies.",
+      "Opt-in explicit actor/critic and SGLang RNG seeding through EAU_TRAINING_SEED; prior launchers without the variable retain their behavior."
+    ],
+    "data_repository": "facebook/collaborative_agent_bench",
+    "data_revision": "cf3526da25989b53f105fe9b74c1174a3e19c548",
+    "official_sweet_rl_reference": "https://github.com/facebookresearch/sweet_rl/tree/38daf2a58497e898a65ef530a7b1c13ff4b0f128"
   }
 }

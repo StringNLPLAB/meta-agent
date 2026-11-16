@@ -1,0 +1,2 @@
+# Preserve imported prompt bytes, including significant trailing spaces.
+gyms/ColBenchGym/colbenchgym/prompts/*.txt whitespace=-blank-at-eol

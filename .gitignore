@@ -10,6 +10,9 @@ __pycache__/
 /reports/
 /outputs/
 /workspace/
+/data/
+/models/
+/examples/colbench/data/
 *.key
 *.pem
 id_rsa*

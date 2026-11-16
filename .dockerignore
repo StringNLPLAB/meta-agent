@@ -10,6 +10,8 @@ id_rsa*
 id_ed25519*
 reports
 outputs
+data
+models
 **/checkpoints
 **/*.safetensors
 **/*.pt

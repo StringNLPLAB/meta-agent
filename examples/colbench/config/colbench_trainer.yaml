@@ -1,0 +1,30 @@
+hydra:
+  searchpath:
+    - file://verl/trainer/config
+defaults:
+  - ppo_trainer
+  - _self_
+algorithm:
+  adv_estimator: gae
+  multiturn_gae:
+    enable: true
+    turn_reward_mode: sao
+  use_intrinsic_reward: false
+  probe_intrinsic_reward:
+    enable: false
+  env_turn_reward:
+    enable: false
+  intrinsic_reward:
+    intrinsic_weight: 0.5
+actor_rollout_ref:
+  hybrid_engine: true
+  rollout:
+    training_temperature: 0.6
+    multi_turn:
+      enable: true
+      model_name: coser-usersim
+      turn_level_method: Equalized
+      trajectory_score_method: Sum
+      tool_config_path: examples/colbench/config/tool_config/colbench_tool_config.yaml
+      satisfaction_probe:
+        enable: false

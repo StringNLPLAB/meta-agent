@@ -1,0 +1,19 @@
+tools:
+  - class_name: "verl.tools.interact_tool.InteractTool"
+    config: {}
+    tool_schema:
+      type: "function"
+      function:
+        name: "interact_with_env"
+        description: "A tool for interacting with the ColBench collaborative coding environment. Use this tool to communicate with the human collaborator by asking clarification questions or providing your final code solution. The environment simulates a real-world collaborative coding scenario where you need to understand hidden requirements through interaction."
+        parameters:
+          type: "object"
+          properties:
+            choice:
+              type: "string"
+              enum: ["action"]
+              description: "Your choice of action: 'action' to interact with the human collaborator."
+            content:
+              type: "string"
+              description: "The content of your action. You can ask clarification questions to understand the requirements better, or provide your final answer starting with 'I WANT TO ANSWER:' followed by your complete Python code solution."
+          required: ["choice", "content"]
